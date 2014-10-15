@@ -38,7 +38,7 @@ if __name__ == '__main__':
     print 'final x:', init_x
     print 'final y:', func1(init_x)
 
-
+    """
     # logistic regression
 
     x = T.vector('x')
@@ -47,6 +47,8 @@ if __name__ == '__main__':
     y = 1.0 / (1.0 + T.exp(-wx))
     l = T.log(y) - T.dot(w, w)  # l2 regularization
     grad_l = T.grad(l, w)
+    grad_y = T.grad(y, w)
+    func_y = theano.function([x, w], grad_y)
     func2 = theano.function([x, w], l)
     func_g = theano.function([x, w], grad_l)
     init_w = np.array([0.0] * 5)
@@ -62,7 +64,7 @@ if __name__ == '__main__':
             converge = True
         old_cost = cost
     print init_w
-    """
+
     x = T.vector('x')
     w = T.vector('w')
     y = T.dot(x, w)  # T.tensordot(x, w, axes=1)
@@ -76,7 +78,7 @@ if __name__ == '__main__':
     print 'cost', funcy(vec, vec)
     print 'grad', f(vec, [1, 1, 1])
 
-    data = [([0, 0], [0]), ([0, 1], [1]), ([1, 0], [1]), ([1, 1], [0])]
+    data = [([0, 0], [0, 0]), ([0, 1], [1, 1]), ([1, 0], [1, 1]), ([1, 1], [0, 0])]
     x = T.vector('x')
     w = T.matrix('w')
     h = T.tensordot(x, w, axes=1)
@@ -89,23 +91,32 @@ if __name__ == '__main__':
     # print np.shape(X_values), X_values
     # print func_prod(X_values, W_hidden)
 
-    # il = Layers.InputLayer(2)
-    hl = Layers.HiddenLayer(3, 2)
-    hl.get_delta([1, 2, 3], [0.1, 0.1])
-    # ol = Layers.OutputLayer(2, 1)
+    il = Layers.HiddenLayer(2, 3)
+    # hl = Layers.HiddenLayer(3, 2)
+    ol = Layers.OutputLayer(3, 2)
 
-    # for d, l in data[:1]:
-    # print 'input', d, 'label', l
+    for d, l in data[:]:
+        print 'input', d, 'label', l
+        il_output = il.get_z(np.asarray(d))
+        # hl_output = hl.get_z(il_output)
+        ol_output = ol.get_z(il_output)
+        ol_delta_final = ol.get_delta_at_final(il_output, np.asarray(l))
+        print 'prediction_ol:', ol_output, 'ol_delta_final:', ol_delta_final
+        ol_delta = ol.get_delta(il_output, ol_delta_final)
+        print 'ol_delta:', ol_delta
+        # ol_delta = ol.get_delta(il_output, ol_delta)
+        # print 'hl_delta', hl_delta
+        # il_delta = il.get_delta(np.asarray(d), hl_delta)
+        # print 'il_delta', il_delta
 
-    # il_output = il.get_output(np.asarray(d))
-    #hl_output = hl.get_output(il_output)
-    #prediction = ol.get_output(hl_output)
-    #print 'prediction', prediction
-    #print 'grad at output', ol.get_grad(hl_output)
-    #o_delta = ol.get_delta(hl_output, np.asarray(l))
-    #print 'o delta', o_delta
-    #h_delta = hl.get_delta(il_output, o_delta)
-    #print 'h delta', h_delta
+    # hl_output = hl.get_output(il_output)
+    # prediction = ol.get_output(hl_output)
+    # print 'prediction', prediction
+    # print 'grad at output', ol.get_grad(hl_output)
+    # o_delta = ol.get_delta(hl_output, np.asarray(l))
+    # print 'o delta', o_delta
+    # h_delta = hl.get_delta(il_output, o_delta)
+    # print 'h delta', h_delta
 
     # inp_val = il.get_inp(d)
     # print 'inp val', inp_val
