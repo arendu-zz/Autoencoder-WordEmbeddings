@@ -89,33 +89,34 @@ if __name__ == '__main__':
     # print np.shape(X_values), X_values
     # print func_prod(X_values, W_hidden)
 
-    il = Layers.InputLayer(2)
-    hl = Layers.HiddenLayer(2, 2)
+    # il = Layers.InputLayer(2)
+    hl = Layers.HiddenLayer(3, 2)
+    hl.get_delta([1, 2, 3], [0.1, 0.1])
+    # ol = Layers.OutputLayer(2, 1)
+
+    # for d, l in data[:1]:
+    # print 'input', d, 'label', l
+
+    # il_output = il.get_output(np.asarray(d))
+    #hl_output = hl.get_output(il_output)
+    #prediction = ol.get_output(hl_output)
+    #print 'prediction', prediction
+    #print 'grad at output', ol.get_grad(hl_output)
+    #o_delta = ol.get_delta(hl_output, np.asarray(l))
+    #print 'o delta', o_delta
+    #h_delta = hl.get_delta(il_output, o_delta)
+    #print 'h delta', h_delta
+
+    # inp_val = il.get_inp(d)
+    # print 'inp val', inp_val
+
+    # hl = Layers.HiddenLayer(2, 2)
+    # out_hidden = hl.get_output(inp_val)
+    # print 'hidden', out_hidden
+    """
     ol = Layers.OutputLayer(2, 1)
-
-    for d, l in data[:1]:
-        print 'input', d, 'label', l
-
-        il_output = il.get_output(np.asarray(d))
-        hl_output = hl.get_output(il_output)
-        prediction = ol.get_output(hl_output)
-        print 'prediction', prediction
-        print 'grad at output', ol.get_grad(hl_output)
-        o_delta = ol.get_delta(hl_output, np.asarray(l))
-        print 'o delta', o_delta
-        h_delta = hl.get_delta(il_output, o_delta)
-        print 'h delta', h_delta
-
-        # inp_val = il.get_inp(d)
-        # print 'inp val', inp_val
-
-        # hl = Layers.HiddenLayer(2, 2)
-        # out_hidden = hl.get_output(inp_val)
-        # print 'hidden', out_hidden
-        """
-        ol = Layers.OutputLayer(2, 1)
-        pred = ol.get_prediction(out_hidden)
-        print 'pred', pred, 'true', l
-        print 'error', ol.get_delta(out_hidden, np.asarray(l))
-        print 'grad', ol.get_grad(out_hidden)
-        """
+    pred = ol.get_prediction(out_hidden)
+    print 'pred', pred, 'true', l
+    print 'error', ol.get_delta(out_hidden, np.asarray(l))
+    print 'grad', ol.get_grad(out_hidden)
+    """
