@@ -56,12 +56,38 @@ class HiddenLayer():
 
 class InputLayer(HiddenLayer):
     def __init__(self, n_inputs):
-        pass
+        HiddenLayer.__init__(self, n_inputs, n_inputs)
+        self.W = np.asarray(np.eye((n_inputs, n_inputs)))
+
+    def get_delta(self, grad_at_input, delta_at_output):
+        return np.asarray([0.0] * self.n_inputs)
 
 
 class OutputLayer(HiddenLayer):
     def __init__(self, n_inputs, n_outputs):
-        pass
+        HiddenLayer.__init__(self, n_inputs, n_outputs)
+        a = T.vector('a')
+        t = T.vector('t')
+        diff = a - t
+        self.func_diff = theano.function([a, t], diff)
+
+    def get_delta(self, x_inputs, target_at_output):
+        a = self.get_a(x_inputs)
+        return self.func_diff(a, target_at_output)
+
+
+class Network():
+    def __init__(self, topology):
+
+        for t in topology:
+            if t == 0:
+                w = topology[t]
+                il = InputLayer(w, w)
+            elif t == len(topology):
+                w = topology[t]
+                wp = topology[t - 1]
+                ol = OutputLayer(wp, w)
+            else:
 
 
 if __name__ == '__main__':
