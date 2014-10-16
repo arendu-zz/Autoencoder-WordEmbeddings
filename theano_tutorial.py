@@ -59,75 +59,50 @@ if __name__ == '__main__':
         cost = func2(init_x, init_w)
         print cost
         update = func_g(init_x, init_w)
-        init_w = init_w + (0.1) * update
+        init_w += 0.1 * update
         if abs(cost - old_cost) < 0.0001:
             converge = True
         old_cost = cost
     print init_w
 
-    x = T.vector('x')
-    w = T.vector('w')
-    y = T.dot(x, w)  # T.tensordot(x, w, axes=1)
-    funcy = theano.function([w, x], y)
-    # J, updates = theano.scan(lambda i, y, w: T.grad(y[i], w), sequences=T.arange(y.shape[0]), non_sequences=[y, w])
-    # f = theano.function([w, x], J, updates=updates)
-    grady = T.grad(y, w)
-    f = theano.function([w, x], grady)
-    mat = np.asarray([[1, 2, 3], [2, 2, 2], [2, 1, 4]])
-    vec = np.asarray([1, 2, 1])
-    print 'cost', funcy(vec, vec)
-    print 'grad', f(vec, [1, 1, 1])
 
-    data = [([0, 0], [0, 0]), ([0, 1], [1, 1]), ([1, 0], [1, 1]), ([1, 1], [0, 0])]
-    x = T.vector('x')
-    w = T.matrix('w')
-    h = T.tensordot(x, w, axes=1)
-    sm = 1.0 / (1.0 + T.exp(-h))
-    func_prod = theano.function([x, w], sm)
-    W_hidden = np.asarray(np.zeros((2, 2)), dtype=theano.config.floatX)
-    X_values = np.asarray([1, 1], dtype=theano.config.floatX)
-    # print np.shape(W_hidden), W_hidden
 
-    # print np.shape(X_values), X_values
-    # print func_prod(X_values, W_hidden)
 
-    il = Layers.HiddenLayer(2, 3)
-    # hl = Layers.HiddenLayer(3, 2)
-    ol = Layers.OutputLayer(3, 2)
+    # xor gate
+    data = [([0, 0], [0]), ([0, 1], [1]), ([1, 0], [1]), ([1, 1], [0])]
 
-    for d, l in data[:]:
-        print 'input', d, 'label', l
-        il_output = il.get_z(np.asarray(d))
-        # hl_output = hl.get_z(il_output)
-        ol_output = ol.get_z(il_output)
-        ol_delta_final = ol.get_delta_at_final(il_output, np.asarray(l))
-        print 'prediction_ol:', ol_output, 'ol_delta_final:', ol_delta_final
-        ol_delta = ol.get_delta(il_output, ol_delta_final)
-        print 'ol_delta:', ol_delta
-        # ol_delta = ol.get_delta(il_output, ol_delta)
-        # print 'hl_delta', hl_delta
-        # il_delta = il.get_delta(np.asarray(d), hl_delta)
-        # print 'il_delta', il_delta
+    theta1 = Layers.HiddenLayer(2, 2)
+    theta2 = Layers.OutputLayer(2, 1)
 
-    # hl_output = hl.get_output(il_output)
-    # prediction = ol.get_output(hl_output)
-    # print 'prediction', prediction
-    # print 'grad at output', ol.get_grad(hl_output)
-    # o_delta = ol.get_delta(hl_output, np.asarray(l))
-    # print 'o delta', o_delta
-    # h_delta = hl.get_delta(il_output, o_delta)
-    # print 'h delta', h_delta
+    theta1_update = np.zeros(np.shape(theta1.W))
+    theta2_update = np.zeros(np.shape(theta2.W))
+    cost = 0.0
+    learning_rate = 1.0
+    for iter in xrange(1):
+        print '\niteration', iter
+        for d, l in data[:]:
+            print '\tinput', d, 'label', l
+            z2 = theta1.get_z(np.asarray(d))
+            z2_prime = theta1.get_zprime(np.asarray(d))
+            z3 = theta2.get_z(z2)
+            z3_prime = theta2.get_zprime(z2)
 
-    # inp_val = il.get_inp(d)
-    # print 'inp val', inp_val
+            d3 = theta2.get_delta_at_final(z3, np.asarray(l))
+            print '\tprediction', z3, 'error', d3
+            logl = np.sum([-li * math.log(z3i) - (1 - li) * math.log(1 - z3i) for li, z3i in zip(l, z3)])
+            cost += logl * (1.0 / float(len(data)))
+            d2 = theta2.get_delta(z2_prime, d3)
+            theta2_update += theta2.weight_update(z2, d3) * (1.0 / float(len(data)))
+            theta1_update += theta1.weight_update(np.asarray(d), d2) * (1.0 / float(len(data)))
+            # print 't1 update', theta1_update
+            # print 't2 update', theta2_update
+        print cost
 
-    # hl = Layers.HiddenLayer(2, 2)
-    # out_hidden = hl.get_output(inp_val)
-    # print 'hidden', out_hidden
-    """
-    ol = Layers.OutputLayer(2, 1)
-    pred = ol.get_prediction(out_hidden)
-    print 'pred', pred, 'true', l
-    print 'error', ol.get_delta(out_hidden, np.asarray(l))
-    print 'grad', ol.get_grad(out_hidden)
-    """
+    nn = Layers.Network([2, 2, 1])
+    nn_cost = nn.get_cost(data)
+    nn.get_gradient(data)
+    print nn_cost
+
+
+
+
