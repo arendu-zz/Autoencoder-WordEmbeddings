@@ -3,6 +3,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import math
+import pdb
 
 
 def add_bias_input(x_input, bias=1.0):
@@ -14,12 +15,21 @@ def remove_bias(delta):
     return delta[:-1]
 
 
+def safe_log(l, p):
+    if abs(l - p) == 1.0:
+        return -100.0
+    elif l == 1:
+        return math.log(p)
+    else:
+        return math.log(1.0 - p)
+
+
 class HiddenLayer():
     def __init__(self, n_inputs, n_outputs, activation="softmax"):
 
         self.n_inputs = n_inputs + 1  # +1 for bias
         self.n_outputs = n_outputs
-        ep = 0.0  # math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
+        ep = math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
         self.W = np.random.uniform(-ep, ep, (self.n_outputs, self.n_inputs))
         # self.W = np.zeros((self.n_outputs, self.n_inputs))
         m1 = T.vector('m1')
@@ -125,33 +135,70 @@ class OutputLayer(HiddenLayer):
 
 
 class Network():
-    def __init__(self, topology):
+    def __init__(self, topology, data):
         self.layers = []
+        self.data = data
         for idx, (t_inp, t_out) in enumerate(zip(topology, topology[1:])):
             if idx == len(topology[1:]) - 1:
                 self.layers.append(OutputLayer(t_inp, t_out))
             else:
                 self.layers.append(HiddenLayer(t_inp, t_out))
 
-
-    def get_cost(self, data):
-        cost = 0.0
-        for d, l in data[:]:
+    def predict(self):
+        predictions = []
+        for d, l in self.data[:]:
             z = d
             for idx, layer in enumerate(self.layers):
                 if idx == len(self.layers) - 1:
                     # this is a output layer
                     prediction = layer.get_z(z)
-                    logl = np.sum(
-                        [-li * math.log(pi) - (1 - li) * math.log(1 - pi) for li, pi in zip(l, prediction)])
-                    cost += logl * (1.0 / float(len(data)))
+                    predictions.append(prediction)
+                    print 'data:', d, 'label:', l, 'prediction:', prediction
+                else:
+                    z = layer.get_z(z)
+        return predictions
+
+    def get_layer_weights(self):
+        linear_weights = np.asarray([])
+        for l in self.layers:
+            length = np.shape(l.W)[0] * np.shape(l.W)[1]
+            linear_weights = np.append(linear_weights, l.W.reshape(length, 1))
+        return linear_weights
+
+    def set_layer_weights(self, weights):
+        st = 0
+        for l in self.layers:
+            end = st + (np.shape(l.W)[0] * np.shape(l.W)[1])
+            segment = weights[st:end]
+            new_w = segment.reshape(np.shape(l.W))
+            l.W = new_w
+            st = end
+
+
+    def get_cost(self, weights):
+        self.set_layer_weights(weights)
+        cost = 0.0
+        for d, l in self.data[:]:
+            z = d
+            for idx, layer in enumerate(self.layers):
+                if idx == len(self.layers) - 1:
+                    # this is a output layer
+                    prediction = layer.get_z(z)
+                    try:
+                        logl = np.sum(
+                            [-li * safe_log(li, pi) - (1 - li) * safe_log(li, pi) for li, pi in zip(l, prediction)])
+                    except ValueError:
+                        print 'ok'
+                        print 'error'
+                    cost += logl * (1.0 / float(len(self.data)))
                 else:
                     z = layer.get_z(z)
         return cost
 
-    def get_gradient(self, data):
+    def get_gradient(self, weights):
+        self.set_layer_weights(weights)
         accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
-        for d, l in data[:]:
+        for d, l in self.data[:]:
             z_list = [None] * (len(self.layers) + 1)
             zp_list = [None] * (len(self.layers) + 1)
             delta_list = [None] * (len(self.layers) + 1)
@@ -177,13 +224,13 @@ class Network():
 
             for idx, layer in enumerate(self.layers):
                 theta = accumulate_deltas[idx]
-                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(len(data)))
+                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(len(self.data)))
                 accumulate_deltas[idx] = theta
 
         linear_weights = np.asarray([])
         for a in accumulate_deltas:
             length = np.shape(a)[0] * np.shape(a)[1]
-            linear_weights = np.append(linear_weights, a.reshape(length, 1))
+            linear_weights = np.append(linear_weights, a.reshape(1, length))
 
         return linear_weights
 

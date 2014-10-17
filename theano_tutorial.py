@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import theano
 import theano.tensor as T
+from scipy.optimize import fmin_l_bfgs_b
+from scipy.optimize import approx_fprime
+from scipy.optimize import check_grad
 import Layers
 
 if __name__ == '__main__':
@@ -39,6 +42,7 @@ if __name__ == '__main__':
     print 'final y:', func1(init_x)
 
     """
+    """
     # logistic regression
 
     x = T.vector('x')
@@ -65,10 +69,10 @@ if __name__ == '__main__':
         old_cost = cost
     print init_w
 
-
+    """
     # xor gate
     data = [([0, 0], [0]), ([0, 1], [1]), ([1, 0], [1]), ([1, 1], [0])]
-
+    """
     theta0 = Layers.HiddenLayer(2, 2)
     theta1 = Layers.OutputLayer(2, 1)
     # theta2 = Layers.OutputLayer(3, 1)
@@ -147,15 +151,19 @@ if __name__ == '__main__':
         linear_weights = np.append(linear_weights, a.reshape(length, 1))
 
     print 'ok'
+    """
+    nn = Layers.Network([2, 3, 1], data)
+    init_weights = nn.get_layer_weights()
+    print '\n*********** BEFORE ************'
+    nn.predict()
+    cost_nn = nn.get_cost(init_weights)
+    print cost_nn
+    # grad = nn.get_gradient(init_weights)
 
-    nn = Layers.Network([2, 2, 1])
-    cost_nn = nn.get_cost(data)
-    grad = nn.get_gradient(data)
-    print np.array_str(grad)
-    print np.array_str(linear_weights)
-    print 'ok'
-
-
-
+    (xopt, fopt, return_status) = fmin_l_bfgs_b(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.001)
+    # print xopt
+    print '\n************ AFTER ************'
+    print nn.get_cost(np.asarray(xopt))
+    nn.predict()
 
 
