@@ -3,6 +3,7 @@ import gzip
 import simplejson
 import Layers
 from scipy.optimize import fmin_l_bfgs_b
+import numpy as np
 
 
 def parse(filename):
@@ -52,7 +53,7 @@ if __name__ == '__main__':
             data.append((bt, bt))
 
     print len(vocab_id), len(data)
-    autoencoder = Layers.Network([len(vocab_id), 10, len(vocab_id)], data)
+    autoencoder = Layers.Network(0.001, [len(vocab_id), 10, len(vocab_id)], data)
     init_weights = autoencoder.get_layer_weights()
     print 'cost', autoencoder.get_cost(init_weights)
 
@@ -60,5 +61,6 @@ if __name__ == '__main__':
                                                 pgtol=0.01)
     # print xopt
     print '\nafter training:'
-    print autoencoder.get_cost(autoencoder.asarray(xopt))
+    print autoencoder.get_cost(np.asarray(xopt))
+    autoencoder.predict(scale=True)
 

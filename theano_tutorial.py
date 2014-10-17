@@ -39,7 +39,7 @@ if __name__ == '__main__':
     print '\n*********** XOR GATE ************'
     data = [([0, 0], [0]), ([0, 1], [1]), ([1, 0], [1]), ([1, 1], [0])]
 
-    nn = Layers.Network([2,  2, 1], data)
+    nn = Layers.Network(0.0001, [2, 2, 1], data)
     init_weights = nn.get_layer_weights()
     print '\nbefore training:'
     cost_nn = nn.get_cost(init_weights)

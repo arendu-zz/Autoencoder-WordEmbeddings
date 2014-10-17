@@ -5,6 +5,10 @@ import theano.tensor as T
 import math
 import pdb
 
+import sklearn.preprocessing
+
+np.set_printoptions(precision=2, suppress=True)
+
 
 def add_bias_input(x_input, bias=1.0):
     x_input = np.append(x_input, [bias])
@@ -135,10 +139,10 @@ class OutputLayer(HiddenLayer):
 
 
 class Network():
-    def __init__(self, topology, data):
+    def __init__(self, lmbda, topology, data):
         self.layers = []
         self.N = float(len(data))
-        self.lmbda = 0.001
+        self.lmbda = lmbda
         self.data = data
         for idx, (t_inp, t_out) in enumerate(zip(topology, topology[1:])):
             if idx == len(topology[1:]) - 1:
@@ -146,7 +150,7 @@ class Network():
             else:
                 self.layers.append(HiddenLayer(t_inp, t_out))
 
-    def predict(self):
+    def predict(self, scale=False):
         predictions = []
         for d, l in self.data[:]:
             z = d
@@ -155,7 +159,15 @@ class Network():
                     # this is a output layer
                     prediction = layer.get_z(z)
                     predictions.append(prediction)
-                    print 'data:', d, 'label:', l, 'prediction:', prediction
+                    if scale:
+                        r = np.max(prediction) - np.min(prediction)
+                        p = prediction - np.min(prediction)
+                        pminmax = p * (1.0 / r)
+                        x = zip(l, pminmax)
+                        x = np.asarray(x)
+                    else:
+                        x = zip(l, prediction)
+                    print 'data:', d, 'label,prediction:', x
                 else:
                     z = layer.get_z(z)
         return predictions
@@ -178,7 +190,7 @@ class Network():
 
 
     def get_cost(self, weights):
-        print 'getting cost...'
+        # print 'getting cost...'
         reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
         self.set_layer_weights(weights)
         cost = 0.0
@@ -196,7 +208,7 @@ class Network():
         return cost + reg
 
     def get_gradient(self, weights):
-        print 'getting gradient...'
+        # print 'getting gradient...'
         reg = (self.lmbda / self.N) * weights
         self.set_layer_weights(weights)
         accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
