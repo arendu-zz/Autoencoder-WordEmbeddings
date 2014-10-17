@@ -137,6 +137,8 @@ class OutputLayer(HiddenLayer):
 class Network():
     def __init__(self, topology, data):
         self.layers = []
+        self.N = float(len(data))
+        self.lmbda = 0.001
         self.data = data
         for idx, (t_inp, t_out) in enumerate(zip(topology, topology[1:])):
             if idx == len(topology[1:]) - 1:
@@ -176,7 +178,7 @@ class Network():
 
 
     def get_cost(self, weights):
-        # TODO: add regularization
+        reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
         self.set_layer_weights(weights)
         cost = 0.0
         for d, l in self.data[:]:
@@ -187,13 +189,13 @@ class Network():
                     prediction = layer.get_z(z)
                     logl = np.sum(
                         [-li * safe_log(li, pi) - (1 - li) * safe_log(li, pi) for li, pi in zip(l, prediction)])
-
-                    cost += logl * (1.0 / float(len(self.data)))
+                    cost += logl * (1.0 / float(self.N))
                 else:
                     z = layer.get_z(z)
-        return cost
+        return cost + reg
 
     def get_gradient(self, weights):
+        reg = (self.lmbda / self.N) * weights
         self.set_layer_weights(weights)
         accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
         for d, l in self.data[:]:
@@ -222,15 +224,15 @@ class Network():
 
             for idx, layer in enumerate(self.layers):
                 theta = accumulate_deltas[idx]
-                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(len(self.data)))
+                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(self.N))
                 accumulate_deltas[idx] = theta
 
-        linear_weights = np.asarray([])
+        linear_deltas = np.asarray([])
         for a in accumulate_deltas:
             length = np.shape(a)[0] * np.shape(a)[1]
-            linear_weights = np.append(linear_weights, a.reshape(1, length))
-
-        return linear_weights
+            linear_deltas = np.append(linear_deltas, a.reshape(length, 1))
+        linear_deltas += reg
+        return linear_deltas
 
 
 if __name__ == '__main__':
