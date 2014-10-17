@@ -19,7 +19,7 @@ class HiddenLayer():
 
         self.n_inputs = n_inputs + 1  # +1 for bias
         self.n_outputs = n_outputs
-        ep = math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
+        ep = 0.0  # math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
         self.W = np.random.uniform(-ep, ep, (self.n_outputs, self.n_inputs))
         # self.W = np.zeros((self.n_outputs, self.n_inputs))
         m1 = T.vector('m1')
@@ -146,33 +146,46 @@ class Network():
                         [-li * math.log(pi) - (1 - li) * math.log(1 - pi) for li, pi in zip(l, prediction)])
                     cost += logl * (1.0 / float(len(data)))
                 else:
-
                     z = layer.get_z(z)
         return cost
 
     def get_gradient(self, data):
-        update_layers = []
-        for d, l in data[:1]:
-            inputs = [d]
-            z_primes = [None]
-            deltas = []
-            for idx, layer in enumerate(self.layers):
-                if isinstance(layer, OutputLayer):
-                    # zp = layer.get_zprime(z)
-                    # z_primes.append(zp)
-                    z = layer.get_z(inputs[-1])
-                    delta = layer.get_delta_at_final(z, np.asarray(l))  # the delta at last layer output
-                    deltas.append(delta)  # this delta will be used to start getting all the other deltas
-                    # we dont need z_prime from this layer
-                else:
-                    z = layer.get_z(inputs[-1])  # take the top of the input list and make prediction
-                    inputs.append(z)  # this output becomes input for next layer
-                    zp = layer.get_zprime(inputs[-1])  # take input and make z_prime for next layer
-                    z_primes.append(zp)  # this z_prime is used to generate the delta for same layer
-            print 'forward pass'
-            print 'ok'
+        accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
+        for d, l in data[:]:
+            z_list = [None] * (len(self.layers) + 1)
+            zp_list = [None] * (len(self.layers) + 1)
+            delta_list = [None] * (len(self.layers) + 1)
+            z_list[0] = d
+            zp_list[0] = d
 
-            # TODO: figure out how to do backword pass properly
+            for idx, layer in enumerate(self.layers):
+                z_next = layer.get_z(z_list[idx])
+                z_next_prime = layer.get_zprime(zp_list[idx])
+                z_list[idx + 1] = z_next
+                zp_list[idx + 1] = z_next_prime
+
+            for idx in reversed(range(len(self.layers))):
+                layer = self.layers[idx]
+                if isinstance(layer, OutputLayer):
+                    delta = layer.get_delta_at_final(z_list[idx + 1], np.asarray(l))
+                    delta_list[idx + 1] = delta
+                    delta = layer.get_delta(zp_list[idx], delta_list[idx + 1])
+                    delta_list[idx] = delta
+                else:
+                    delta = layer.get_delta(zp_list[idx], delta_list[idx + 1])
+                    delta_list[idx] = delta
+
+            for idx, layer in enumerate(self.layers):
+                theta = accumulate_deltas[idx]
+                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(len(data)))
+                accumulate_deltas[idx] = theta
+
+        linear_weights = np.asarray([])
+        for a in accumulate_deltas:
+            length = np.shape(a)[0] * np.shape(a)[1]
+            linear_weights = np.append(linear_weights, a.reshape(length, 1))
+
+        return linear_weights
 
 
 if __name__ == '__main__':
