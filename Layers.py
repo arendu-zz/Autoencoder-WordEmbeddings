@@ -178,6 +178,7 @@ class Network():
 
 
     def get_cost(self, weights):
+        print 'getting cost...'
         reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
         self.set_layer_weights(weights)
         cost = 0.0
@@ -195,6 +196,7 @@ class Network():
         return cost + reg
 
     def get_gradient(self, weights):
+        print 'getting gradient...'
         reg = (self.lmbda / self.N) * weights
         self.set_layer_weights(weights)
         accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
