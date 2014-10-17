@@ -4,6 +4,7 @@ import simplejson
 import Layers
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
+import pdb
 
 
 def parse(filename):
@@ -35,7 +36,7 @@ if __name__ == '__main__':
             tokens = txt - funcwords
             vocab.update(tokens)
             c += 1
-            if c > 50:
+            if c > 5:
                 break
 
     for idx, token in enumerate(vocab):
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
     data = []
     for e in parse('Arts.txt.gz'):
-        if 'review/text' in e and len(data) < 50:
+        if 'review/text' in e and len(data) < 5:
             txt = set(e['review/text'].lower().split())
             tokens = txt - funcwords
             sparse_bit_vector = [vocab_id[t] for t in tokens]
@@ -53,7 +54,7 @@ if __name__ == '__main__':
             data.append((bt, bt))
 
     print len(vocab_id), len(data)
-    autoencoder = Layers.Network(0.001, [len(vocab_id), 10, len(vocab_id)], data)
+    autoencoder = Layers.Network(0.001, [len(vocab_id), 5, len(vocab_id)], data)
     init_weights = autoencoder.get_layer_weights()
     print 'cost', autoencoder.get_cost(init_weights)
 
@@ -63,4 +64,6 @@ if __name__ == '__main__':
     print '\nafter training:'
     print autoencoder.get_cost(np.asarray(xopt))
     autoencoder.predict(scale=True)
+    # W = autoencoder.layers[0]
+    # pdb.set_trace()
 
