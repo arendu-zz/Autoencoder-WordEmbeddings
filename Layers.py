@@ -176,6 +176,7 @@ class Network():
 
 
     def get_cost(self, weights):
+        # TODO: add regularization
         self.set_layer_weights(weights)
         cost = 0.0
         for d, l in self.data[:]:
