@@ -29,22 +29,18 @@ if __name__ == '__main__':
     vocab = set([])
     vocab_id = {}
 
-    c = 0.0
-    for e in parse('Arts.txt.gz'):
+    for e in parse('Arts.demo.txt.gz'):
         if 'review/text' in e:
             txt = set(e['review/text'].lower().split())
             tokens = txt - funcwords
             vocab.update(tokens)
-            c += 1
-            if c > 5:
-                break
 
     for idx, token in enumerate(vocab):
         vocab_id[token] = len(vocab_id)
 
     data = []
-    for e in parse('Arts.txt.gz'):
-        if 'review/text' in e and len(data) < 5:
+    for e in parse('Arts.demo.txt.gz'):
+        if 'review/text' in e:
             txt = set(e['review/text'].lower().split())
             tokens = txt - funcwords
             sparse_bit_vector = [vocab_id[t] for t in tokens]
