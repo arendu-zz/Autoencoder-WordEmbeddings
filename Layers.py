@@ -185,12 +185,9 @@ class Network():
                 if idx == len(self.layers) - 1:
                     # this is a output layer
                     prediction = layer.get_z(z)
-                    try:
-                        logl = np.sum(
-                            [-li * safe_log(li, pi) - (1 - li) * safe_log(li, pi) for li, pi in zip(l, prediction)])
-                    except ValueError:
-                        print 'ok'
-                        print 'error'
+                    logl = np.sum(
+                        [-li * safe_log(li, pi) - (1 - li) * safe_log(li, pi) for li, pi in zip(l, prediction)])
+
                     cost += logl * (1.0 / float(len(self.data)))
                 else:
                     z = layer.get_z(z)
