@@ -19,9 +19,9 @@ class HiddenLayer():
 
         self.n_inputs = n_inputs + 1  # +1 for bias
         self.n_outputs = n_outputs
-        # ep = math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
-        # self.W = np.random.uniform(-ep, ep, (self.n_outputs, self.n_inputs))
-        self.W = np.zeros((self.n_outputs, self.n_inputs))
+        ep = math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
+        self.W = np.random.uniform(-ep, ep, (self.n_outputs, self.n_inputs))
+        # self.W = np.zeros((self.n_outputs, self.n_inputs))
         m1 = T.vector('m1')
         m2 = T.vector('m2')
         m = m1 * m2
@@ -78,6 +78,7 @@ class HiddenLayer():
         return gz
 
     def get_delta(self, zprime_current, delta_from_next):
+        delta_from_next = remove_bias(delta_from_next)
         zprime_current = add_bias_input(zprime_current, bias=1.0)
         assert np.shape(delta_from_next) == (self.n_outputs,)
         assert np.shape(zprime_current) == (self.n_inputs,)
@@ -93,11 +94,6 @@ class HiddenLayer():
         self.W += learning_rate * w_update
 
 
-class InputLayer(HiddenLayer):
-    def __init__(self, n_inputs, n_outputs):
-        HiddenLayer.__init__(self, n_inputs, n_outputs)
-
-
 class OutputLayer(HiddenLayer):
     def __init__(self, n_inputs, n_outputs):
         HiddenLayer.__init__(self, n_inputs, n_outputs)
@@ -108,6 +104,18 @@ class OutputLayer(HiddenLayer):
 
     def get_delta_at_final(self, prediction, target_at_output):
         return self.func_diff(prediction, target_at_output)
+
+    def get_delta(self, zprime_current, delta_from_next):
+        zprime_current = add_bias_input(zprime_current, bias=1.0)
+        assert np.shape(delta_from_next) == (self.n_outputs,)
+        assert np.shape(zprime_current) == (self.n_inputs,)
+        p = np.asarray([])
+        for c in xrange(np.shape(self.W)[1]):
+            w_col = self.W[:, c]
+            p = np.append(p, self.func_dot(w_col, delta_from_next))
+        delta_current = self.func_mult(p, zprime_current)
+        assert np.shape(delta_current) == (self.n_inputs,)
+        return delta_current
 
     def weight_update(self, z_current, delta_from_next):
         z_current = add_bias_input(z_current)
