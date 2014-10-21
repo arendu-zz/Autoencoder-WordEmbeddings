@@ -2,7 +2,7 @@ __author__ = 'arenduchintala'
 __author__ = 'arenduchintala'
 import numpy as np
 import math
-from scipy.sparse import *
+from scipy.optimize import fmin_l_bfgs_b
 import pdb
 
 import sklearn.preprocessing
@@ -10,23 +10,20 @@ import sklearn.preprocessing
 np.set_printoptions(precision=2, suppress=True)
 
 
-def sigmoid(dense_vector):
-    d = - dense_vector
+def sigmoid(a):
+    d = - a
     d = 1.0 + np.exp(d)
     d = 1.0 / d
-    return csr_matrix(d)
+    return d.reshape(np.shape(a))
 
 
-def sigmoid_prime(sparse_z):
-    d2 = csr_matrix(1.0 - sparse_z.todense())
-    return d2.multiply(sparse_z)
+def sigmoid_prime(z):
+    return z * (1.0 - z)
 
 
-def add_bias_input(x_input, bias=1.0):
-    # todo: this is going to break!!!
-    # todo: x_input is a csr_matrix of the shape 1,n np.append wont work
-    x_input = np.append(x_input, [bias])
-    return x_input
+def add_bias_input(vec, bias=1.0):
+    vec = np.append(vec, [bias])
+    return vec.reshape(np.size(vec), 1)
 
 
 def remove_bias(delta):
@@ -44,22 +41,23 @@ def safe_log(l, p):
 
 class HiddenLayer():
     def __init__(self, n_inputs, n_outputs):
-
         self.n_inputs = n_inputs + 1  # +1 for bias
         self.n_outputs = n_outputs
         ep = math.sqrt(6.0) / math.sqrt(self.n_inputs + self.n_outputs)
         self.W = np.random.uniform(-ep, ep, (self.n_outputs, self.n_inputs))
+        # self.W = np.zeros((self.n_outputs, self.n_inputs))
 
 
     def func_dot(self, x, w):
-        return x.dot(w)
+        assert np.shape(x) == np.shape(w)
+        return np.dot(x.T, w)[0, 0]
 
     def func_mult(self, m1, m2):
-        return m1.multiply(m2)
+        assert np.shape(m1) == np.shape(m2)
+        return m1 * m2
 
     def func_z(self, x, w):
         a = self.func_dot(x, w)
-        a = a.todense()
         z = sigmoid(a)
         return z
 
@@ -77,45 +75,37 @@ class HiddenLayer():
 
     def get_a(self, x_input):
         x_input = add_bias_input(x_input)
-        assert np.shape(x_input) == (self.n_inputs,)
-        a = np.asarray([])
-        for r in xrange(np.shape(self.W)[0]):
-            w_row = self.W[r]
-            a = np.append(a, self.func_dot(x_input, w_row))
-        assert np.shape(a) == (self.n_outputs, )
+        assert np.shape(x_input) == (self.n_inputs, 1)
+        a = np.dot(self.W, x_input)
+        assert np.shape(a) == (self.n_outputs, 1)
         return a
 
     def get_z(self, x_input):
+        assert np.shape(x_input) == (self.n_inputs - 1, 1)
         x_input = add_bias_input(x_input)
-        assert np.shape(x_input) == (self.n_inputs, )
-        z = np.asarray([])
-        for r in xrange(np.shape(self.W)[0]):
-            w_row = self.W[r]
-            z = np.append(z, self.func_z(x_input, w_row))
-        assert np.shape(z) == (self.n_outputs, )
+        assert np.shape(x_input) == (self.n_inputs, 1)
+        a = np.dot(self.W, x_input)
+        z = sigmoid(a)
+        assert np.shape(z) == (self.n_outputs, 1)
         return z
 
     def get_zprime(self, x_input):
         x_input = add_bias_input(x_input)
-        assert np.shape(x_input) == (self.n_inputs, )
-        gz = np.asarray([])
-        for r in xrange(np.shape(self.W)[0]):
-            w_row = self.W[r]
-            gz = np.append(gz, self.func_gprime(x_input, w_row))
-        assert np.shape(gz) == (self.n_outputs, )
+        assert np.shape(x_input) == (self.n_inputs, 1)
+        a = np.dot(self.W, x_input)
+        z = sigmoid(a)
+        gz = sigmoid_prime(z)
+        assert np.shape(gz) == (self.n_outputs, 1)
         return gz
 
     def get_delta(self, zprime_current, delta_from_next):
         delta_from_next = remove_bias(delta_from_next)
         zprime_current = add_bias_input(zprime_current, bias=1.0)
-        assert np.shape(delta_from_next) == (self.n_outputs,)
-        assert np.shape(zprime_current) == (self.n_inputs,)
-        p = np.asarray([])
-        for c in xrange(np.shape(self.W)[1]):
-            w_col = self.W[:, c]
-            p = np.append(p, self.func_dot(w_col, delta_from_next))
-        delta_current = self.func_mult(p, zprime_current)
-        assert np.shape(delta_current) == (self.n_inputs,)
+        assert np.shape(delta_from_next) == (self.n_outputs, 1)
+        assert np.shape(zprime_current) == (self.n_inputs, 1)
+        p_test = np.dot(self.W.T, delta_from_next)
+        delta_current = p_test * zprime_current
+        assert np.shape(delta_current) == (self.n_inputs, 1)
         return delta_current
 
     def update(self, learning_rate, w_update):
@@ -125,34 +115,26 @@ class HiddenLayer():
 class OutputLayer(HiddenLayer):
     def __init__(self, n_inputs, n_outputs):
         HiddenLayer.__init__(self, n_inputs, n_outputs)
-        # z = T.vector('z')
-        # t = T.vector('t')
-        # diff = z - t
-        # self.func_diff = theano.function([z, t], diff)
-
-    def func_diff(self, z, t):
-        return z - t
 
     def get_delta_at_final(self, prediction, target_at_output):
-        return self.func_diff(prediction, target_at_output)
+        assert np.shape(prediction) == (self.n_outputs, 1)
+        assert np.shape(target_at_output) == (self.n_outputs, 1)
+        return prediction - target_at_output
 
     def get_delta(self, zprime_current, delta_from_next):
         zprime_current = add_bias_input(zprime_current, bias=1.0)
-        assert np.shape(delta_from_next) == (self.n_outputs,)
-        assert np.shape(zprime_current) == (self.n_inputs,)
-        p = np.asarray([])
-        for c in xrange(np.shape(self.W)[1]):
-            w_col = self.W[:, c]
-            p = np.append(p, self.func_dot(w_col, delta_from_next))
-        delta_current = self.func_mult(p, zprime_current)
-        assert np.shape(delta_current) == (self.n_inputs,)
+        assert np.shape(delta_from_next) == (self.n_outputs, 1)
+        assert np.shape(zprime_current) == (self.n_inputs, 1)
+        p_test = np.dot(self.W.T, delta_from_next)
+        delta_current = p_test * zprime_current
+        assert np.shape(delta_current) == (self.n_inputs, 1)
         return delta_current
 
     def weight_update(self, z_current, delta_from_next):
         z_current = add_bias_input(z_current)
         x1 = np.reshape(delta_from_next, (self.n_outputs, 1))
         x2 = np.reshape(z_current, (1, self.n_inputs))
-        return np.multiply(x1, x2)
+        return x1 * x2
 
 
 class Network():
@@ -183,8 +165,8 @@ class Network():
                         x = zip(l, pminmax)
                         x = np.asarray(x)
                     else:
-                        x = zip(l, prediction)
-                    print 'data:', d, 'label,prediction:', x
+                        x = np.hstack((l, prediction))
+                    print 'data:', d.T, 'label', l.T, 'prediction:', prediction.T
                 else:
                     z = layer.get_z(z)
         return predictions
@@ -268,5 +250,24 @@ class Network():
 
 if __name__ == '__main__':
     # script here
-    pass
+    data = [([0, 1], [1]),
+            ([0, 0], [0]),
+            ([1, 0], [1]),
+            ([1, 1], [0])]
+    data = [(np.reshape(x, (len(x), 1)), np.reshape(y, (len(y), 1)))
+            for x, y in data]
 
+    nn = Network(0.0001, [2, 2, 1], data)
+    init_weights = nn.get_layer_weights()
+    print '\nbefore training:'
+    cost_nn = nn.get_cost(init_weights)
+    print cost_nn
+    nn.predict()
+
+    grad = nn.get_gradient(init_weights)
+    print grad
+    (xopt, fopt, return_status) = fmin_l_bfgs_b(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.001)
+    # print xopt
+    print '\nafter training:'
+    print nn.get_cost(np.asarray(xopt))
+    nn.predict()
