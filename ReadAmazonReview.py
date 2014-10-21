@@ -1,8 +1,9 @@
 __author__ = 'arenduchintala'
 import gzip
 import simplejson
-import Layers
+import NpLayers
 from scipy.optimize import fmin_l_bfgs_b
+from scipy.optimize import fmin_bfgs
 import numpy as np
 import pdb
 
@@ -47,15 +48,15 @@ if __name__ == '__main__':
             bt = [0.0] * len(vocab_id)
             for i in sparse_bit_vector:
                 bt[i] = 1.0
+            bt = np.reshape(bt, (len(bt), 1))
             data.append((bt, bt))
 
     print len(vocab_id), len(data)
-    autoencoder = Layers.Network(0.001, [len(vocab_id), 5, len(vocab_id)], data)
+    autoencoder = NpLayers.Network(0.001, [len(vocab_id), 5, len(vocab_id)], data)
     init_weights = autoencoder.get_layer_weights()
     print 'cost', autoencoder.get_cost(init_weights)
 
-    (xopt, fopt, return_status) = fmin_l_bfgs_b(autoencoder.get_cost, init_weights, autoencoder.get_gradient,
-                                                pgtol=0.01)
+    (xopt, fopt, return_status) = fmin_l_bfgs_b(autoencoder.get_cost, init_weights, autoencoder.get_gradient, pgtol=0.1)
     # print xopt
     print '\nafter training:'
     print autoencoder.get_cost(np.asarray(xopt))
