@@ -6,6 +6,7 @@ import math
 import pdb
 
 import sklearn.preprocessing
+from scipy.optimize import fmin_l_bfgs_b
 
 np.set_printoptions(precision=2, suppress=True)
 
@@ -251,5 +252,22 @@ class Network():
 
 if __name__ == '__main__':
     # script here
-    pass
+    data = [([0, 1], [1]),
+            ([0, 0], [0]),
+            ([1, 0], [1]),
+            ([1, 1], [0])]
 
+    nn = Network(0.0001, [2, 2, 1], data)
+    init_weights = nn.get_layer_weights()
+    print '\nbefore training:'
+    cost_nn = nn.get_cost(init_weights)
+    print cost_nn
+    nn.predict()
+
+    grad = nn.get_gradient(init_weights)
+    print grad
+    (xopt, fopt, return_status) = fmin_l_bfgs_b(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.001)
+    # print xopt
+    print '\nafter training:'
+    print nn.get_cost(np.asarray(xopt))
+    nn.predict()

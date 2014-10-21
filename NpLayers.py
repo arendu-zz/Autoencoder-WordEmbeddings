@@ -3,9 +3,7 @@ __author__ = 'arenduchintala'
 import numpy as np
 import math
 from scipy.optimize import fmin_l_bfgs_b
-import pdb
-
-import sklearn.preprocessing
+from scipy.optimize import fmin_bfgs
 
 np.set_printoptions(precision=2, suppress=True)
 
@@ -190,8 +188,11 @@ class Network():
 
     def get_cost(self, weights):
         # print 'getting cost...'
-        reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
+        # reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
+        reg = (self.lmbda / self.N) * np.sum(np.abs(weights))
+
         self.set_layer_weights(weights)
+
         cost = 0.0
         for d, l in self.data[:]:
             z = d
@@ -266,7 +267,7 @@ if __name__ == '__main__':
 
     grad = nn.get_gradient(init_weights)
     print grad
-    (xopt, fopt, return_status) = fmin_l_bfgs_b(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.001)
+    (xopt, fopt, return_status) = fmin_bfgs(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.0001)
     # print xopt
     print '\nafter training:'
     print nn.get_cost(np.asarray(xopt))
