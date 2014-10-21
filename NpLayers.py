@@ -164,7 +164,9 @@ class Network():
                         x = np.asarray(x)
                     else:
                         x = np.hstack((l, prediction))
-                    print 'data:', d.T, 'label', l.T, 'prediction:', prediction.T
+                    print '\ndata:', d.T
+                    print 'label', l.T
+                    print 'prediction:', prediction.T
                 else:
                     z = layer.get_z(z)
         return predictions

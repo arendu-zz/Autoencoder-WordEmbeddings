@@ -1,7 +1,7 @@
 __author__ = 'arenduchintala'
 import gzip
 import simplejson
-import NpLayers
+import NpLayers as L
 from scipy.optimize import fmin_l_bfgs_b
 from scipy.optimize import fmin_bfgs
 import numpy as np
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             data.append((bt, bt))
 
     print len(vocab_id), len(data)
-    autoencoder = NpLayers.Network(0.001, [len(vocab_id), 5, len(vocab_id)], data)
+    autoencoder = L.Network(0.001, [len(vocab_id), 5, len(vocab_id)], data)
     init_weights = autoencoder.get_layer_weights()
     print 'cost', autoencoder.get_cost(init_weights)
 
