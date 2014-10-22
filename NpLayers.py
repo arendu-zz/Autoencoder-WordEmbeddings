@@ -189,12 +189,10 @@ class Network():
 
 
     def get_cost(self, weights):
-        # print 'getting cost...'
+        print 'getting cost...'
         # reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
         reg = (self.lmbda / self.N) * np.sum(np.abs(weights))
-
         self.set_layer_weights(weights)
-
         cost = 0.0
         for d, l in self.data[:]:
             z = d
@@ -202,15 +200,18 @@ class Network():
                 if idx == len(self.layers) - 1:
                     # this is a output layer
                     prediction = layer.get_z(z)
-                    logl = np.sum(
-                        [-li * safe_log(li, pi) - (1 - li) * safe_log(li, pi) for li, pi in zip(l, prediction)])
-                    cost += logl * (1.0 / float(self.N))
+                    prediction[prediction >= 1.0] = 1.0 - np.finfo(float).eps  # to avoid nan showing up
+                    prediction[prediction <= 0.0] = 0.0 + np.finfo(float).eps
+                    l1p = -l * np.log(prediction)
+                    l2p = -(1.0 - l) * np.log((1.0 - prediction))
+                    lcost = np.sum(l1p + l2p)
+                    cost += lcost * (1.0 / float(self.N))
                 else:
                     z = layer.get_z(z)
         return cost + reg
 
     def get_gradient(self, weights):
-        # print 'getting gradient...'
+        print 'getting gradient...'
         reg = (self.lmbda / self.N) * weights
         self.set_layer_weights(weights)
         accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
@@ -269,7 +270,7 @@ if __name__ == '__main__':
 
     grad = nn.get_gradient(init_weights)
     print grad
-    (xopt, fopt, return_status) = fmin_bfgs(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.0001)
+    (xopt, fopt, return_status) = fmin_l_bfgs_b(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.0001)
     # print xopt
     print '\nafter training:'
     print nn.get_cost(np.asarray(xopt))
