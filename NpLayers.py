@@ -3,9 +3,22 @@ __author__ = 'arenduchintala'
 import numpy as np
 import math
 from scipy.optimize import fmin_l_bfgs_b
-from scipy.optimize import fmin_bfgs
+import cPickle as pickle
 
 np.set_printoptions(precision=2, suppress=True)
+
+
+def dump(nn, location):
+    f = file(location, 'wb')
+    pickle.dump(nn, f, protocol=pickle.HIGHEST_PROTOCOL)
+    f.close()
+
+
+def load(location):
+    f = file(location, 'rb')
+    nn = pickle.load(f)
+    f.close()
+    return nn
 
 
 def sigmoid(a):
@@ -136,16 +149,22 @@ class OutputLayer(HiddenLayer):
 
 
 class Network():
-    def __init__(self, lmbda, topology, data):
+    def __init__(self, lmbda=None, topology=None, data=None):
         self.layers = []
-        self.N = float(len(data))
         self.lmbda = lmbda
         self.data = data
+        if topology is not None:
+            self.init_topology(topology)
+        if data is not None:
+            self.N = float(len(data))
+
+    def init_topology(self, topology):
         for idx, (t_inp, t_out) in enumerate(zip(topology, topology[1:])):
             if idx == len(topology[1:]) - 1:
                 self.layers.append(OutputLayer(t_inp, t_out))
             else:
                 self.layers.append(HiddenLayer(t_inp, t_out))
+
 
     def predict(self, scale=False):
         predictions = []
@@ -164,12 +183,19 @@ class Network():
                         x = np.asarray(x)
                     else:
                         x = np.hstack((l, prediction))
-                    print '\ndata:', d.T
-                    print 'label', l.T
-                    print 'prediction:', prediction.T
                 else:
                     z = layer.get_z(z)
         return predictions
+
+    def get_representation(self, x_input, layer=0):
+        """
+        :returns output of the layer (after sigmoid)
+        :param x_input:
+        :param layer:
+        :return:
+        """
+        z = self.layers[layer].get_z(x_input)
+        return z
 
     def get_layer_weights(self):
         linear_weights = np.asarray([])
@@ -272,4 +298,11 @@ if __name__ == '__main__':
     # print xopt
     print '\nafter training:'
     print nn.get_cost(np.asarray(xopt))
-    nn.predict()
+    print 'prediction:', nn.predict()
+    print 'label     :', [l for d, l in data]
+    nn.set_layer_weights(xopt)
+    dump(nn, 'test')
+    nn1 = Network()
+    nn1 = load('test')
+    print '\nafter pickle'
+    print nn1.get_cost(nn1.get_layer_weights())

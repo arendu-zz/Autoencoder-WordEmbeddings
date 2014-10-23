@@ -30,7 +30,7 @@ if __name__ == '__main__':
     vocab = set([])
     vocab_id = {}
     print 'making vocab list...'
-    for e in parse('Arts.demo2.txt.gz'):
+    for e in parse('Arts.txt.gz'):
         if 'review/text' in e:
             txt = set(e['review/text'].lower().split())
             tokens = txt - funcwords
