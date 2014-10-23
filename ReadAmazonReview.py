@@ -52,8 +52,8 @@ if __name__ == '__main__':
             bt = np.reshape(bt, (len(bt), 1))
             data.append((bt, bt))
 
+    data = data[:200]
     print len(vocab_id), len(data)
-
     print 'read documents'
     autoencoder = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data)
     init_weights = autoencoder.get_layer_weights()
@@ -63,7 +63,8 @@ if __name__ == '__main__':
     # print xopt
     final_cost = autoencoder.get_cost(np.asarray(xopt))
     print 'cost before training', init_cost, ' after training:', final_cost
-    # autoencoder.predict(scale=True)
-    # W = autoencoder.layers[0]
-    # pdb.set_trace()
+
+
+
+
 
