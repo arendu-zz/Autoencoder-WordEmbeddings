@@ -1,11 +1,14 @@
 __author__ = 'arenduchintala'
 import gzip
-import simplejson
+
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
+
 import NpLayers as L
 from scipy.optimize import fmin_l_bfgs_b
-from scipy.optimize import fmin_bfgs
 import numpy as np
-import pdb
 
 
 def parse(filename):
@@ -59,7 +62,8 @@ if __name__ == '__main__':
     init_weights = autoencoder.get_layer_weights()
     init_cost = autoencoder.get_cost(init_weights)
 
-    (xopt, fopt, return_status) = fmin_l_bfgs_b(autoencoder.get_cost, init_weights, autoencoder.get_gradient, pgtol=0.1)
+    (xopt, fopt, return_status) = fmin_l_bfgs_b(autoencoder.get_cost, init_weights, autoencoder.get_gradient, pgtol=0.1,
+                                                maxfun=10)
     # print xopt
     final_cost = autoencoder.get_cost(np.asarray(xopt))
     print 'cost before training', init_cost, ' after training:', final_cost
