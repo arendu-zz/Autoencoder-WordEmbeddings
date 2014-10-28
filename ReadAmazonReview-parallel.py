@@ -67,10 +67,10 @@ if __name__ == '__main__':
             bt = np.reshape(bt, (len(bt), 1))
             data.append((bt, bt))
 
-    data = data[:200]
+    data = data[:5000]
     print len(vocab_id), len(data)
     # simulated parallel
-    num_chunks = 4.0
+    num_chunks = 9.0
     autoencoders = []
     for c in xrange(int(num_chunks)):
         data_chunk = data[c * int(len(data) / num_chunks): (c + 1) * int(len(data) / num_chunks)]
@@ -78,20 +78,36 @@ if __name__ == '__main__':
         ae = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data_chunk)
         autoencoders.append(ae)
     print 'initialized parallel encoders...'
-    perv_cost = float('inf')
     threshold = 10
     converged = False
-    while not converged:
+    # This is the model we care about. The weights of this model will be updated to reflect the
+    # average of multiple autoencoders (with identical topology) which are trained on different
+    # subsets of the the training data.
+    avg_ae = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data)
+    prev_cost = avg_ae.get_cost(avg_ae.get_layer_weights())
+    itr = 0
+    while itr < 5:
         cost = 0.0
-        weights = average_weights(autoencoders)
         for idx, ae in enumerate(autoencoders):
-            (xopt, fopt, return_status) = fmin_l_bfgs_b(ae.get_cost, weights, ae.get_gradient,
-                                                        pgtol=0.1, maxfun=10)
+            (xopt, fopt, return_status) = fmin_l_bfgs_b(ae.get_cost, ae.get_layer_weights(), ae.get_gradient,
+                                                        pgtol=0.1, maxfun=5)
             ae.set_layer_weights(xopt)
             cost += ae.get_cost(xopt)
-        print 'cost:', cost
-        if abs(cost - perv_cost) < threshold:
-            converged = True
-        else:
-            converged = False
-            prev_cost = cost
+            print "idx =", idx, "cost =", ae.get_cost(xopt)
+        weights = average_weights(autoencoders)
+        avg_ae.set_layer_weights(weights)
+        cost = avg_ae.get_cost(weights)
+
+        for idx in range(0, len(autoencoders)):
+          ae.set_layer_weights(weights)
+        
+        other_cost = autoencoders[0].get_cost(weights)
+        print "Cost:", cost
+        print "Prev Cost:", prev_cost
+        # At the moment it is better to see how the cost is changing with repeated iterations,
+        # rather than stopping early. 
+        if abs(cost - prev_cost) < threshold:
+            #converged = True
+            print "Training has converged"
+        prev_cost = cost
+        itr += 1
