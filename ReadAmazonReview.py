@@ -1,5 +1,6 @@
 __author__ = 'arenduchintala'
 import gzip
+import pdb
 
 try:
     import simplejson
@@ -7,7 +8,7 @@ except ImportError:
     import json as simplejson
 
 import NpLayers as L
-from scipy.optimize import fmin_l_bfgs_b
+
 import numpy as np
 
 
@@ -27,13 +28,15 @@ def parse(filename):
     yield entry
 
 
+import utils
+
 if __name__ == '__main__':
     # script here
     funcwords = set(open('functionwords.txt', 'r').read().split('\n'))
     vocab = set([])
     vocab_id = {}
     print 'making vocab list...'
-    for e in parse('Arts.txt.gz'):
+    for e in parse('Arts.demo2.txt.gz'):
         if 'review/text' in e:
             txt = set(e['review/text'].lower().split())
             tokens = txt - funcwords
@@ -44,7 +47,7 @@ if __name__ == '__main__':
     print 'made vocab list.'
     print 'reading documents...'
     data = []
-    for e in parse('Arts.demo2.txt.gz'):
+    for e in parse('Arts.demo.txt.gz'):
         if 'review/text' in e:
             txt = set(e['review/text'].lower().split())
             tokens = txt - funcwords
@@ -55,17 +58,22 @@ if __name__ == '__main__':
             bt = np.reshape(bt, (len(bt), 1))
             data.append((bt, bt))
 
-    data = data[:200]
+    data = data[:10]
     print len(vocab_id), len(data)
     print 'read documents'
     autoencoder = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data)
-    init_weights = autoencoder.get_layer_weights()
-    init_cost = autoencoder.get_cost(init_weights)
+    init_weights = autoencoder.get_network_weights()
+    init_cost = autoencoder.get_cost(init_weights, data)
+    print len(init_weights)
+    # pdb.set_trace()
+    #print 'computing finite difference grad...'
+    #grad = autoencoder.get_gradient(init_weights, data)
+    #grad_approx = utils.gradient_checking(init_weights, 1e-5, autoencoder.get_cost, data)
+    #print 'cosine similarity between grad and finite difference approx', utils.cosine_sim(grad, grad_approx)
 
-    (xopt, fopt, return_status) = fmin_l_bfgs_b(autoencoder.get_cost, init_weights, autoencoder.get_gradient, pgtol=0.1,
-                                                maxfun=10)
-    # print xopt
-    final_cost = autoencoder.get_cost(np.asarray(xopt))
+    final_weights = autoencoder.train(data)
+    # print final_weights
+    final_cost = autoencoder.get_cost(final_weights, data)
     print 'cost before training', init_cost, ' after training:', final_cost
 
 
