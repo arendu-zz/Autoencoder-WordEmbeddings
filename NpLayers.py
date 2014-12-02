@@ -2,7 +2,7 @@ __author__ = 'arenduchintala'
 __author__ = 'arenduchintala'
 import numpy as np
 import math
-from scipy.optimize import fmin_l_bfgs_b
+from scipy.optimize import minimize
 import cPickle as pickle
 
 np.set_printoptions(precision=2, suppress=True)
@@ -152,23 +152,28 @@ class Network():
     def __init__(self, lmbda=None, topology=None, data=None):
         self.layers = []
         self.lmbda = lmbda
-        self.data = data
+        # self.data = data
         if topology is not None:
-            self.init_topology(topology)
+            self.topology = topology
+            self.layers = self.make_layers(topology)
         if data is not None:
             self.N = float(len(data))
 
-    def init_topology(self, topology):
+    def make_layers(self, topology):
+        layers = []
         for idx, (t_inp, t_out) in enumerate(zip(topology, topology[1:])):
             if idx == len(topology[1:]) - 1:
-                self.layers.append(OutputLayer(t_inp, t_out))
+                # self.layers.append(OutputLayer(t_inp, t_out))
+                layers.append(OutputLayer(t_inp, t_out))
             else:
-                self.layers.append(HiddenLayer(t_inp, t_out))
+                # self.layers.append(HiddenLayer(t_inp, t_out))
+                layers.append(HiddenLayer(t_inp, t_out))
+        return layers
 
 
-    def predict(self, scale=False):
+    def predict(self, data, scale=False):
         predictions = []
-        for d, l in self.data[:]:
+        for d, l in data[:]:
             z = d
             for idx, layer in enumerate(self.layers):
                 if idx == len(self.layers) - 1:
@@ -197,14 +202,14 @@ class Network():
         z = self.layers[layer].get_z(x_input)
         return z
 
-    def get_layer_weights(self):
+    def get_network_weights(self):
         linear_weights = np.asarray([])
         for l in self.layers:
             length = np.shape(l.W)[0] * np.shape(l.W)[1]
             linear_weights = np.append(linear_weights, l.W.reshape(length, 1))
         return linear_weights
 
-    def set_layer_weights(self, weights):
+    def set_network_weights(self, weights):
         st = 0
         for l in self.layers:
             end = st + (np.shape(l.W)[0] * np.shape(l.W)[1])
@@ -213,17 +218,30 @@ class Network():
             l.W = new_w
             st = end
 
+    def convert_weights_to_layers(self, weights):
+        layers = self.make_layers(self.topology)
+        st = 0
+        for l in layers:
+            end = st + (np.shape(l.W)[0] * np.shape(l.W)[1])
+            segment = weights[st:end]
+            new_w = segment.reshape(np.shape(l.W))
+            l.W = new_w
+            st = end
+        return layers
 
-    def get_cost(self, weights):
+
+    def get_cost(self, weights, data, display=False):
         # print 'getting cost...'
-        # reg = (self.lmbda / 2.0 * self.N) * np.sum(weights ** 2)
-        reg = (self.lmbda / self.N) * np.sum(np.abs(weights))
-        self.set_layer_weights(weights)
+        N = float(len(data))
+        reg = (self.lmbda / 2.0 * N) * np.sum(weights ** 2)
+        # reg = (self.lmbda / self.N) * np.sum(np.abs(weights))
+        # self.set_network_weights(weights)
+        layers = self.convert_weights_to_layers(weights)
         cost = 0.0
-        for d, l in self.data[:]:
+        for d, l in data[:]:
             z = d
-            for idx, layer in enumerate(self.layers):
-                if idx == len(self.layers) - 1:
+            for idx, layer in enumerate(layers):
+                if idx == len(layers) - 1:
                     # this is a output layer
                     prediction = layer.get_z(z)
                     prediction[prediction >= 1.0] = 1.0 - np.finfo(float).eps  # to avoid nan showing up
@@ -231,31 +249,36 @@ class Network():
                     l1p = -l * np.log(prediction)
                     l2p = -(1.0 - l) * np.log((1.0 - prediction))
                     lcost = np.sum(l1p + l2p)
-                    cost += lcost * (1.0 / float(self.N))
+                    cost += lcost * (1.0 / float(N))
                 else:
+
                     z = layer.get_z(z)
+        if display:
+            print 'cost', cost + reg
         return cost + reg
 
-    def get_gradient(self, weights):
+    def get_gradient(self, weights, data, display=False):
         # print 'getting grad...'
-        reg = (self.lmbda / self.N) * weights
-        self.set_layer_weights(weights)
-        accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in self.layers]
-        for d, l in self.data[:]:
-            z_list = [None] * (len(self.layers) + 1)
-            zp_list = [None] * (len(self.layers) + 1)
-            delta_list = [None] * (len(self.layers) + 1)
+        N = float(len(data))
+        reg = (self.lmbda / N) * weights
+        # self.set_network_weights(weights)
+        layers = self.convert_weights_to_layers(weights)
+        accumulate_deltas = [np.zeros(np.shape(layer.W)) for layer in layers]
+        for d, l in data[:]:
+            z_list = [None] * (len(layers) + 1)
+            zp_list = [None] * (len(layers) + 1)
+            delta_list = [None] * (len(layers) + 1)
             z_list[0] = d
             zp_list[0] = d
 
-            for idx, layer in enumerate(self.layers):
+            for idx, layer in enumerate(layers):
                 z_next = layer.get_z(z_list[idx])
                 z_next_prime = layer.get_zprime(zp_list[idx])
                 z_list[idx + 1] = z_next
                 zp_list[idx + 1] = z_next_prime
 
-            for idx in reversed(range(len(self.layers))):
-                layer = self.layers[idx]
+            for idx in reversed(range(len(layers))):
+                layer = layers[idx]
                 if isinstance(layer, OutputLayer):
                     delta = layer.get_delta_at_final(z_list[idx + 1], np.asarray(l))
                     delta_list[idx + 1] = delta
@@ -265,7 +288,7 @@ class Network():
                     delta = layer.get_delta(zp_list[idx], delta_list[idx + 1])
                     delta_list[idx] = delta
 
-            for idx, layer in enumerate(self.layers):
+            for idx, layer in enumerate(layers):
                 theta = accumulate_deltas[idx]
                 theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(self.N))
                 accumulate_deltas[idx] = theta
@@ -277,6 +300,14 @@ class Network():
         linear_deltas += reg
         return linear_deltas
 
+    def train(self, data):
+        t1 = minimize(self.get_cost, init_weights, method='L-BFGS-B', jac=self.get_gradient,
+                      args=(data, ),
+                      tol=0.000001)
+        return t1.x
+
+
+import utils
 
 if __name__ == '__main__':
     # script here
@@ -288,23 +319,27 @@ if __name__ == '__main__':
             for x, y in data]
 
     nn = Network(0.0001, [2, 2, 1], data)
-    init_weights = nn.get_layer_weights()
-    print '\nbefore training:'
-    cost_nn = nn.get_cost(init_weights)
-    print cost_nn
-    nn.predict()
+    init_weights = nn.get_network_weights()
+    grad = nn.get_gradient(init_weights, data)
 
-    grad = nn.get_gradient(init_weights)
-    print grad
-    (xopt, fopt, return_status) = fmin_l_bfgs_b(nn.get_cost, init_weights, nn.get_gradient, pgtol=0.0001)
-    # print xopt
-    print '\nafter training:'
-    print nn.get_cost(np.asarray(xopt))
-    print 'prediction:', nn.predict()
-    print 'label     :', [l for d, l in data]
-    nn.set_layer_weights(xopt)
+    grad_approx = utils.gradient_checking(init_weights, 1e-4, nn.get_cost, data)
+    print 'cosine similarity between grad and finite difference approx', utils.cosine_sim(grad, grad_approx)
+
+    nn = Network(0.0001, [2, 2, 1], data)
+    init_weights = nn.get_network_weights()
+    print 'before training:', nn.get_cost(init_weights, data)
+    final_weights = nn.train(data)
+    print 'after training:', nn.get_cost(np.asarray(final_weights), data)
+    nn.set_network_weights(final_weights)
+    p = [round(float(l.item()), 2) for l in nn.predict(data)]
+    print 'prediction:', p
+    l = [float(l) for d, l in data]
+    print 'label     :', l
+    print 'cosine    :', utils.cosine_sim(np.array(p), np.array(l))
+
+    nn.set_network_weights(final_weights)
     dump(nn, 'test')
     nn1 = Network()
     nn1 = load('test')
     print '\nafter pickle'
-    print nn1.get_cost(nn1.get_layer_weights())
+    print nn1.get_cost(final_weights, data)
