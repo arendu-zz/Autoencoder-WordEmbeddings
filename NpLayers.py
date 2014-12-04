@@ -1,5 +1,3 @@
-__author__ = 'arenduchintala'
-__author__ = 'arenduchintala'
 import numpy as np
 import math
 from scipy.optimize import minimize
@@ -159,6 +157,12 @@ class Network():
         if data is not None:
             self.N = float(len(data))
 
+    def size_bytes(self):
+      tot_bytes = 0
+      for l in self.layers:
+        tot_bytes += l.W.nbytes
+      return tot_bytes
+
     def make_layers(self, topology):
         layers = []
         for idx, (t_inp, t_out) in enumerate(zip(topology, topology[1:])):
@@ -233,7 +237,7 @@ class Network():
     def get_cost(self, weights, data, display=False):
         # print 'getting cost...'
         N = float(len(data))
-        reg = (self.lmbda / 2.0 * N) * np.sum(weights ** 2)
+        reg = (self.lmbda / (2.0 * N)) * np.sum(weights ** 2)
         # reg = (self.lmbda / self.N) * np.sum(np.abs(weights))
         # self.set_network_weights(weights)
         layers = self.convert_weights_to_layers(weights)
@@ -290,7 +294,8 @@ class Network():
 
             for idx, layer in enumerate(layers):
                 theta = accumulate_deltas[idx]
-                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(self.N))
+                N = len(data)
+                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(N))
                 accumulate_deltas[idx] = theta
 
         linear_deltas = np.asarray([])
