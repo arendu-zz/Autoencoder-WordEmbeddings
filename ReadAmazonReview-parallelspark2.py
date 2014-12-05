@@ -65,7 +65,7 @@ def merge(x, y):
 
 if __name__ == '__main__':
     #input_width = 2000
-    inside_width = 50
+    inside_width = 100
 
     funcwords = set(open('functionwords.txt', 'r').read().split('\n'))
     vocab = set([])
@@ -113,11 +113,12 @@ if __name__ == '__main__':
     print "Size of ae =", ae.size_bytes()
     prev_cost = ae.get_cost(ae.get_network_weights(), data)
     itr = 0
+    # Removed:
+    #      .setMaster("local")
     conf = (SparkConf()
-         .setMaster("local")
-         .setAppName("My app")
-         .set("spark.executor.memory", "10g")
-         .set("spark.python.worker.memory","10g"))
+         .setAppName("My app"))
+        # .set("spark.executor.memory", "10g")
+        # .set("spark.python.worker.memory","10g"))
     sc = SparkContext(conf=conf)
 
     rdd = sc.parallelize(data, numSlices=int(num_chunks))
