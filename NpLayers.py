@@ -253,7 +253,7 @@ class Network():
                 else:
 
                     z = layer.get_z(z)
-        if display:
+        if True:
             print 'cost', cost + reg
         return cost + reg
 
@@ -290,7 +290,7 @@ class Network():
 
             for idx, layer in enumerate(layers):
                 theta = accumulate_deltas[idx]
-                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(self.N))
+                theta += layer.weight_update(z_list[idx], delta_list[idx + 1]) * (1.0 / float(N))
                 accumulate_deltas[idx] = theta
 
         linear_deltas = np.asarray([])
@@ -300,10 +300,12 @@ class Network():
         linear_deltas += reg
         return linear_deltas
 
-    def train(self, data):
+    def train(self, data, init_weights=None, tol=0.0001):
+        if init_weights is None:
+            init_weights = self.get_network_weights()
         t1 = minimize(self.get_cost, init_weights, method='L-BFGS-B', jac=self.get_gradient,
                       args=(data, ),
-                      tol=0.000001)
+                      tol=tol)
         return t1.x
 
 
@@ -327,6 +329,7 @@ if __name__ == '__main__':
 
     nn = Network(0.0001, [2, 2, 1], data)
     init_weights = nn.get_network_weights()
+    dump(init_weights, 'init')
     print 'before training:', nn.get_cost(init_weights, data)
     final_weights = nn.train(data)
     print 'after training:', nn.get_cost(np.asarray(final_weights), data)
