@@ -29,20 +29,24 @@ def parse(filename):
     yield entry
 
 
-def make_vocab(path_to_corpus, path_to_funcwords):
+def make_vocab(path_to_corpus, path_to_funcwords, max_vocab=5000):
     funcwords = set(open(path_to_funcwords, 'r').read().split('\n'))
-    vocab = set([])
     vocab_id = {}
+    vocab_count = {}
     print 'making vocab list...'
     for e in parse(path_to_corpus):
         if 'review/text' in e:
             s = e['review/text']
             txt = set([t.lower() for t in word_tokenize(s)])
             tokens = txt - funcwords
-            vocab.update(tokens)
+
+            for t in tokens:
+                vocab_count[t] = vocab_count.get(t, 0.0) + 1.0
+    vocab_count_inv = sorted([(c, t) for t, c in vocab_count.items()], reverse=True)[:max_vocab]
+    capped_vocab = [t for c, t in vocab_count_inv]
 
     write_vocab_map = open('vocab.map', 'w')
-    for idx, token in enumerate(vocab):
+    for idx, token in enumerate(capped_vocab):
         vocab_id[token] = len(vocab_id)
         write_vocab_map.write(token + '\t' + str(vocab_id[token]) + '\n')
     write_vocab_map.flush()
@@ -50,16 +54,13 @@ def make_vocab(path_to_corpus, path_to_funcwords):
     return vocab_id
 
 
-def make_data(path_to_corpus, path_to_funcwords, vocab_id):
-    funcwords = set(open(path_to_funcwords, 'r').read().split('\n'))
+def make_data(path_to_corpus, vocab_id):
     data = []
     for e in parse(path_to_corpus):
         if 'review/text' in e:
             s = e['review/text']
-            txt = set([t.lower() for t in word_tokenize(s)])
-            tokens = txt - funcwords
-            sparse_bit_vector = [vocab_id[t] for t in tokens]
-
+            tokens = set([t.lower() for t in word_tokenize(s)])
+            sparse_bit_vector = [vocab_id[t] for t in tokens if t in vocab_id]
             bt = [0.0] * len(vocab_id)
             for i in sparse_bit_vector:
                 bt[i] = 1.0
@@ -73,10 +74,10 @@ import utils
 if __name__ == '__main__':
     # script here
     print 'making vocab...'
-    vocab_id = make_vocab('Arts.demo2.txt.gz', 'functionwords.txt')
+    vocab_id = make_vocab('Arts.demo2.txt.gz', 'functionwords.txt', max_vocab=2000)
     print 'reading documents...'
-    data = make_data('Arts.demo2.txt.gz', 'functionwords.txt', vocab_id)
-    data = data[:10]
+    data = make_data('Arts.demo2.txt.gz', vocab_id)
+
     print len(vocab_id), len(data)
     print 'read documents'
     autoencoder = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data)
