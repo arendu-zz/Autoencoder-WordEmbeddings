@@ -335,7 +335,7 @@ if __name__ == '__main__':
     init_weights = nn.get_network_weights()
     dump(init_weights, 'init')
     print 'before training:', nn.get_cost(init_weights, data)
-    final_weights = nn.train(data)
+    final_weights = nn.train(data, tol=0.0000001)
     print 'after training:', nn.get_cost(np.asarray(final_weights), data)
     nn.set_network_weights(final_weights)
     p = [round(float(l.item()), 2) for l in nn.predict(data)]

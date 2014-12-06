@@ -50,7 +50,7 @@ def make_vocab(path_to_corpus, path_to_funcwords):
     return vocab_id
 
 
-def make_data(path_to_corpus, path_to_funcwords):
+def make_data(path_to_corpus, path_to_funcwords, vocab_id):
     funcwords = set(open(path_to_funcwords, 'r').read().split('\n'))
     data = []
     for e in parse(path_to_corpus):
@@ -72,10 +72,11 @@ import utils
 
 if __name__ == '__main__':
     # script here
+    print 'making vocab...'
     vocab_id = make_vocab('Arts.demo2.txt.gz', 'functionwords.txt')
     print 'reading documents...'
-    data = make_data('Arts.demo2.txt.gz', 'functionwords.txt')
-    # data = data[:10]
+    data = make_data('Arts.demo2.txt.gz', 'functionwords.txt', vocab_id)
+    data = data[:10]
     print len(vocab_id), len(data)
     print 'read documents'
     autoencoder = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data)
