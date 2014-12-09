@@ -38,9 +38,10 @@ def parallel_train_accumilate(results):
 if __name__ == '__main__':
 
     # script here
-    corpus = "Arts.demo2.txt.gz"
+    corpus = "Arts.txt.gz"
     max_vocab = 5000
-    num_chunks = 10
+    num_chunks = 20
+    hidden_nodes = 200
     print 'making vocab...'
     vocab_map_name = '.'.join([corpus, str(max_vocab), 'map'])
     vocab_id = make_vocab(corpus, 'functionwords.txt', max_vocab=max_vocab, save_vocab_map=vocab_map_name)
@@ -54,12 +55,12 @@ if __name__ == '__main__':
     # This is the model we care about. The weights of this model will be updated to reflect the
     # average of multiple autoencoders (with identical topology) which are trained on different
     # subsets of the the training data.
-    avg_ae = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], full_data)
+    avg_ae = L.Network(0.1, [len(vocab_id),hidden_nodes, len(vocab_id)], full_data)
     nn_weights = avg_ae.get_network_weights()
     cpu_count = num_chunks
     for c in xrange(int(num_chunks)):
         data_chunk = full_data[c * int(len(full_data) / num_chunks): (c + 1) * int(len(full_data) / num_chunks)]
-        ae = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data_chunk)
+        ae = L.Network(0.1, [len(vocab_id),hidden_nodes ,len(vocab_id)], data_chunk)
         ae.set_network_weights(nn_weights)
         data_chunks.append(data_chunk)
         autoencoders.append(ae)
@@ -92,6 +93,6 @@ if __name__ == '__main__':
         itr += 1
 
     avg_ae.set_network_weights(nn_weights)
-    nn_name = '.'.join([corpus, str(max_vocab), str(num_chunks), 'nn'])
+    nn_name = '.'.join([corpus, str(max_vocab),str(num_chunks), str(hidden_nodes), 'nn'])
     L.dump(avg_ae, nn_name)
 
