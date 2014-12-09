@@ -82,16 +82,16 @@ if __name__ == '__main__':
 
         nn_weights = (1.0 / num_chunks) * itr_weights  # average_weights(autoencoders)
         nn_cost = (1.0 / num_chunks) * itr_cost
-        cost = avg_ae.get_cost(nn_weights, full_data)
-        print 'ave_ae cost:', cost
+        # cost = avg_ae.get_cost(nn_weights, full_data)
+        # print 'ave_ae cost:', cost
         print 'nn cost    :', nn_cost
 
-        if abs(cost - prev_cost) < threshold:
-            itr = 100
-        prev_cost = cost
+        # if abs(cost - prev_cost) < threshold:
+        # itr = 100
+        # prev_cost = cost
         itr += 1
 
     avg_ae.set_network_weights(nn_weights)
-    nn_name = '.'.join([corpus, str(max_vocab),str(num_chunks), 'nn'])
+    nn_name = '.'.join([corpus, str(max_vocab), str(num_chunks), 'nn'])
     L.dump(avg_ae, nn_name)
 
