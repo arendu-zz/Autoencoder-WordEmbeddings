@@ -40,6 +40,7 @@ if __name__ == '__main__':
     # script here
     corpus = "Arts.demo2.txt.gz"
     max_vocab = 5000
+    num_chunks = 10
     print 'making vocab...'
     vocab_map_name = '.'.join([corpus, str(max_vocab), 'map'])
     vocab_id = make_vocab(corpus, 'functionwords.txt', max_vocab=max_vocab, save_vocab_map=vocab_map_name)
@@ -55,9 +56,7 @@ if __name__ == '__main__':
     # subsets of the the training data.
     avg_ae = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], full_data)
     nn_weights = avg_ae.get_network_weights()
-
-    num_chunks = 4.0
-
+    cpu_count = num_chunks
     for c in xrange(int(num_chunks)):
         data_chunk = full_data[c * int(len(full_data) / num_chunks): (c + 1) * int(len(full_data) / num_chunks)]
         ae = L.Network(0.1, [len(vocab_id), 50, len(vocab_id)], data_chunk)
@@ -72,15 +71,6 @@ if __name__ == '__main__':
     while itr < 10:
         itr_cost = 0.0
         itr_weights = np.zeros(np.shape(nn_weights))
-        """
-        for idx, ae in enumerate(autoencoders):
-            print 'chunk', idx
-            dc = data_chunks[idx]
-            batch_weights, batch_cost = ae.train_earlystop(dc, init_weights=nn_weights, maxfun=2)
-            itr_weights += batch_weights
-            itr_cost += batch_cost
-        """
-        cpu_count = multiprocessing.cpu_count()
         pool = Pool(processes=cpu_count)
         for idx, ae in enumerate(autoencoders):
             dc = data_chunks[idx]
@@ -102,6 +92,6 @@ if __name__ == '__main__':
         itr += 1
 
     avg_ae.set_network_weights(nn_weights)
-    nn_name = '.'.join([corpus, str(max_vocab), 'nn'])
+    nn_name = '.'.join([corpus, str(max_vocab),str(num_chunks), 'nn'])
     L.dump(avg_ae, nn_name)
 
