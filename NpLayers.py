@@ -2,6 +2,8 @@ import numpy as np
 import math
 from scipy.optimize import minimize
 import cPickle as pickle
+from random import shuffle
+import pdb
 
 np.set_printoptions(precision=2, suppress=True)
 
@@ -257,7 +259,7 @@ class Network():
                 else:
 
                     z = layer.get_z(z)
-        if True:
+        if display:
             print 'cost', cost + reg
         return cost + reg
 
@@ -310,7 +312,38 @@ class Network():
         t1 = minimize(self.get_cost, init_weights, method='L-BFGS-B', jac=self.get_gradient,
                       args=(data, ),
                       tol=tol)
+
         return t1.x
+
+
+    def train_earlystop(self, data, init_weights=None, tol=0.0001, maxfun=5):
+        if init_weights is None:
+            print 'using network weights...'
+            init_weights = self.get_network_weights()
+        t1 = minimize(self.get_cost, init_weights, method='L-BFGS-B', jac=self.get_gradient,
+                      args=(data, ),
+                      tol=tol, options={'maxfun': maxfun})
+
+        return t1.x, t1.fun
+
+    def train_adagrad(self, data, init_weights=None, maxfun=5):
+        if init_weights is None:
+            print 'using network weights...'
+            weights = self.get_network_weights()
+        else:
+            weights = init_weights
+        ids = range(len(data))
+        eta0 = 1.0
+        sum_square_grad = np.zeros(np.shape(weights))
+        I = 1.0
+        for _ in range(maxfun):
+            shuffle(ids)
+            for d_id in ids:
+                grad = self.get_gradient(weights, data[d_id:d_id + 1])
+                sum_square_grad += (grad ** 2)
+                eta_t = eta0 / np.sqrt(I + sum_square_grad)
+                weights -= np.multiply(eta_t, grad)
+        return weights
 
 
 import utils
@@ -330,7 +363,7 @@ if __name__ == '__main__':
 
     grad_approx = utils.gradient_checking(init_weights, 1e-4, nn.get_cost, data)
     print 'cosine similarity between grad and finite difference approx', utils.cosine_sim(grad, grad_approx)
-
+    exit()
     nn = Network(0.0001, [2, 2, 1], data)
     init_weights = nn.get_network_weights()
     dump(init_weights, 'init')
