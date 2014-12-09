@@ -72,12 +72,12 @@ def make_data(path_to_corpus, vocab_id):
 import utils
 
 if __name__ == '__main__':
-    SAVE_TRAINED_NN = "trained.nn"  # give a better name here
+    SAVE_TRAINED_NN = "arts-5000-50.nn"  # give a better name here
     # script here
     print 'making vocab...'
-    vocab_id = make_vocab('Arts.demo2.txt.gz', 'functionwords.txt', max_vocab=2000)
+    vocab_id = make_vocab('Arts.txt.gz', 'functionwords.txt', max_vocab=5000)
     print 'reading documents...'
-    data = make_data('Arts.demo2.txt.gz', vocab_id)
+    data = make_data('Arts.txt.gz', vocab_id)
 
     print len(vocab_id), len(data)
     print 'read documents'
