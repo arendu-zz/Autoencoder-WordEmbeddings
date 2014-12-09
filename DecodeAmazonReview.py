@@ -10,6 +10,7 @@ import gzip, sys, itertools, time
 import pdb
 import nltk
 from nltk.tokenize import word_tokenize
+
 nltk.download('all')
 
 try:
@@ -20,6 +21,7 @@ except ImportError:
 import NpLayers as L
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
+
 
 def parse(filename):
     f = gzip.open(filename, 'r')
@@ -36,12 +38,14 @@ def parse(filename):
         entry[attribute_name] = attribute_val
     yield entry
 
+
 def read_vocab(path_to_vocab):
     vocab_id = {}
     for line in open(path_to_vocab).readlines():
-        word,num = line.strip().split()
-        vocab_id[word]=int(num)
+        word, num = line.strip().split()
+        vocab_id[word] = int(num)
     return vocab_id
+
 
 def make_data(path_to_corpus, vocab_id):
     data = []
@@ -54,14 +58,15 @@ def make_data(path_to_corpus, vocab_id):
             for i in sparse_bit_vector:
                 bt[i] = 1.0
             bt = np.reshape(bt, (len(bt), 1))
-            data.append( bt)
+            data.append(bt)
     return data
 
+
 if __name__ == '__main__':
-    #Pass as parameters:
-    #[path to data to decode] [file to write data embeddings] 
-    #    [path to autoencoder] [path to vocab.map] 
-    #    [file to write word embeddings]
+    # Pass as parameters:
+    # [path to data to decode] [file to write data embeddings]
+    # [path to autoencoder] [path to vocab.map]
+    # [file to write word embeddings]
 
     #Output written to data_out and word_out:
     #    tab-separated: [ID]    [embedding (as list)]
@@ -84,29 +89,31 @@ if __name__ == '__main__':
     # Size of the embeddings.
     inside_width = autoencoder.topology[1]
 
-    assert(input_width == autoencoder.topology[0])
+    assert (input_width == autoencoder.topology[0])
 
     print 'reading documents...'
-    data = make_data(decoding_data,  vocab_id)
+    data = make_data(decoding_data, vocab_id)
     print 'done reading documents', len(data), 'documents...'
 
     #Decode documents
     decoded = [autoencoder.get_representation(d) for d in data]
-    
-    f = open(data_out,'w')
+
+    f = open(data_out, 'w')
     for i in range(len(decoded)):
-        f.write(str(i)+'\t'
-                +str(list(np.reshape(decoded[i],inside_width)))+'\n')
+        arr_str = ','.join([str(n) for n in list(np.reshape(decoded[i], inside_width))])
+        f.write(str(i) + '\t'
+                + arr_str + '\n')
     f.close()
 
     #Decode words
-    f = open(word_out,'w')
+    f = open(word_out, 'w')
     for line in open(wordmap).readlines():
         word, val = line.strip().split()
         onehot = [0.0] * len(vocab_id)
         onehot[int(val)] = 1
         onehot = np.reshape(onehot, (len(onehot), 1))
-        f.write(word+'\t'
-                +str(list(np.reshape(autoencoder.get_representation(onehot)
-                                ,inside_width)))+'\n')
+        arr_str = ','.join([str(n) for n in list(np.reshape(autoencoder.get_representation(onehot)
+                                                            , inside_width))])
+        f.write(word + '\t'
+                + arr_str + '\n')
     f.close()
