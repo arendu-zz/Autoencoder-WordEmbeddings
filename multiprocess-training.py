@@ -24,18 +24,15 @@ data_chunks = []
 def parallel_train(idx, nn_weights, data_chunk):
     global autoencoders, data_chunks
     print 'training batch', idx
-    print autoencoders[idx].get_cost(nn_weights)
-    # batch_weights, batch_cost = autoencoders[idx].train_earlystop(data_chunks[idx], init_weights=nn_weights, maxfun=2)
-    # return idx, batch_weights, batch_cost
-    return idx  # , np.zeros(10), 1.0
+    batch_weights, batch_cost = autoencoders[idx].train_earlystop(data_chunks[idx], init_weights=nn_weights, maxfun=2)
+    return idx, batch_weights, batch_cost
 
 
 def parallel_train_accumilate(results):
     global itr_weights, itr_cost
-    print('in acc')
-    # itr_weights += results[1]
-    # itr_cost += results[2]
-    print 'accumilated batch', results
+    print results[0],'is accumilated'
+    itr_weights += results[1]
+    itr_cost += results[2]
 
 
 if __name__ == '__main__':
@@ -84,7 +81,7 @@ if __name__ == '__main__':
             itr_weights += batch_weights
             itr_cost += batch_cost
         """
-        cpu_count = multiprocessing.cpu_count()
+        cpu_count = 4 #4 #4 #4 #multiprocessing.cpu_count()
         pool = Pool(processes=cpu_count)
         for idx, ae in enumerate(autoencoders):
             dc = data_chunks[idx]
