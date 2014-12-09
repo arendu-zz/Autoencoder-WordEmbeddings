@@ -97,6 +97,10 @@ if __name__ == '__main__':
     autoencoder.set_network_weights(final_weights)
     L.dump(autoencoder, SAVE_TRAINED_NN)
 
+    final_weights_agagrad = autoencoder.train_adagrad(data, init_weights, 2)
+    final_cost_adagrad = autoencoder.get_cost(final_weights_agagrad, data)
+    print 'cost before training', init_cost, 'after adagrad training', final_cost_adagrad
+
 
 
 
