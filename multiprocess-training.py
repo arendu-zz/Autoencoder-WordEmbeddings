@@ -30,7 +30,7 @@ def parallel_train(idx, nn_weights, data_chunk):
 
 def parallel_train_accumilate(results):
     global itr_weights, itr_cost
-    print results[0],'is accumilated'
+    print results[0], 'is accumilated'
     itr_weights += results[1]
     itr_cost += results[2]
 
@@ -38,18 +38,17 @@ def parallel_train_accumilate(results):
 if __name__ == '__main__':
 
     # script here
+    corpus = "Arts.demo2.txt.gz"
+    max_vocab = 5000
     print 'making vocab...'
-    vocab_id = make_vocab('Arts.demo2.txt.gz', 'functionwords.txt', max_vocab=2000)
+    vocab_map_name = '.'.join([corpus, str(max_vocab), 'map'])
+    vocab_id = make_vocab(corpus, 'functionwords.txt', max_vocab=max_vocab, save_vocab_map=vocab_map_name)
     print 'reading documents...'
-    full_data = make_data('Arts.demo2.txt.gz', vocab_id)
+    full_data = make_data(corpus, vocab_id)
 
-    # full_data = full_data[:500]
     print len(vocab_id), len(full_data)
-    # simulated parallel
 
     threshold = 0.01
-    converged = False
-
 
     # This is the model we care about. The weights of this model will be updated to reflect the
     # average of multiple autoencoders (with identical topology) which are trained on different
@@ -81,7 +80,7 @@ if __name__ == '__main__':
             itr_weights += batch_weights
             itr_cost += batch_cost
         """
-        cpu_count = 4 #4 #4 #4 #multiprocessing.cpu_count()
+        cpu_count = multiprocessing.cpu_count()
         pool = Pool(processes=cpu_count)
         for idx, ae in enumerate(autoencoders):
             dc = data_chunks[idx]
@@ -103,5 +102,6 @@ if __name__ == '__main__':
         itr += 1
 
     avg_ae.set_network_weights(nn_weights)
-    L.dump(avg_ae, 'average-ae-Arts-2000.nn')
+    nn_name = '.'.join([corpus, str(max_vocab), 'nn'])
+    L.dump(avg_ae, nn_name)
 

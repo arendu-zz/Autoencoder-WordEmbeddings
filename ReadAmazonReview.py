@@ -29,7 +29,7 @@ def parse(filename):
     yield entry
 
 
-def make_vocab(path_to_corpus, path_to_funcwords, max_vocab=5000):
+def make_vocab(path_to_corpus, path_to_funcwords, max_vocab=5000, save_vocab_map='vocab.map'):
     funcwords = set(open(path_to_funcwords, 'r').read().split('\n'))
     vocab_id = {}
     vocab_count = {}
@@ -45,7 +45,7 @@ def make_vocab(path_to_corpus, path_to_funcwords, max_vocab=5000):
     vocab_count_inv = sorted([(c, t) for t, c in vocab_count.items()], reverse=True)[:max_vocab]
     capped_vocab = [t for c, t in vocab_count_inv]
 
-    write_vocab_map = open('vocab.map', 'w')
+    write_vocab_map = open(save_vocab_map, 'w')
     for idx, token in enumerate(capped_vocab):
         vocab_id[token] = len(vocab_id)
         write_vocab_map.write(token + '\t' + str(vocab_id[token]) + '\n')
