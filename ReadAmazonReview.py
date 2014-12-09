@@ -72,6 +72,7 @@ def make_data(path_to_corpus, vocab_id):
 import utils
 
 if __name__ == '__main__':
+    SAVE_TRAINED_NN = "trained.nn"  # give a better name here
     # script here
     print 'making vocab...'
     vocab_id = make_vocab('Arts.demo2.txt.gz', 'functionwords.txt', max_vocab=2000)
@@ -93,6 +94,8 @@ if __name__ == '__main__':
     # print final_weights
     final_cost = autoencoder.get_cost(final_weights, data)
     print 'cost before training', init_cost, ' after training:', final_cost
+    autoencoder.set_network_weights(final_weights)
+    L.dump(autoencoder, SAVE_TRAINED_NN)
 
 
 
