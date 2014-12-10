@@ -1,4 +1,12 @@
-__author__ = 'arenduchintala'
+# CS 600.615 Big Data
+#
+# This script demonstrates parallel autoencoder training using
+# the Python library multiprocessing to create parallelism.
+# The algorithm is a simple averaging technique.
+# See Autoencoder.py for the autoencoder implementation.
+#
+# Authors: Adithya Renduchintala, Rebecca Knowles, David Snyder
+
 import gzip
 import multiprocessing
 from multiprocessing import Pool
@@ -10,8 +18,8 @@ try:
 except ImportError:
     import json as simplejson
 
-import NpLayers as L
-from ReadAmazonReview import make_data, make_vocab
+import Autoencoder as L
+from TrainSerial import make_data, make_vocab
 
 global itr_weights, itr_cost, num_chunks, autoencoders, data_chunks
 itr_cost = 0.0
@@ -28,9 +36,9 @@ def parallel_train(idx, nn_weights, data_chunk):
     return idx, batch_weights, batch_cost
 
 
-def parallel_train_accumilate(results):
+def parallel_train_accumulate(results):
     global itr_weights, itr_cost
-    print results[0], 'is accumilated'
+    print results[0], 'is accumulated'
     itr_weights += results[1]
     itr_cost += results[2]
 
@@ -75,9 +83,9 @@ if __name__ == '__main__':
         pool = Pool(processes=cpu_count)
         for idx, ae in enumerate(autoencoders):
             dc = data_chunks[idx]
-            # p = Process(target=parallel_train, args=(idx, ae, nn_weights, dc), callback=parallel_train_accumilate)
+            # p = Process(target=parallel_train, args=(idx, ae, nn_weights, dc), callback=parallel_train_accumulate)
             pool.apply_async(parallel_train, args=(idx, nn_weights, dc),
-                             callback=parallel_train_accumilate)
+                             callback=parallel_train_accumulate)
         pool.close()
         pool.join()
 

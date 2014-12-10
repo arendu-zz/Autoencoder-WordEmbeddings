@@ -1,3 +1,9 @@
+# CS 600.615 Big Data
+#
+# This class implementats a three layer autoencoder.
+#
+# Authors: Adithya Renduchintala, Rebecca Knowles, David Snyder
+
 import numpy as np
 import math
 from scipy.optimize import minimize

@@ -1,10 +1,9 @@
 # CS 600.615 Big Data
 #
-# This script demonstrates parallel autoencoder training in Pyspark
-# using a simple averaging method.
-# See NpLayers.py for the autoencoder implementation.
+# This script demonstrates serial autoencoder decoding.
+# See Autoencoder.py for the autoencoder implementation.
 #
-# Authors: David Snyder, Adithya Renduchintala, Rebecca Knowles
+# Authors: Rebecca Knowles, David Snyder, Adithya Renduchintala
 
 import gzip, sys, itertools, time
 import pdb
@@ -18,7 +17,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import NpLayers as L
+import Autoencoder as L
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 

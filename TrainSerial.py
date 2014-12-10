@@ -1,4 +1,10 @@
-__author__ = 'arenduchintala'
+# CS 600.615 Big Data
+#
+# This script demonstrates serial autoencoder.
+# See Autoencoder.py for the autoencoder implementation.
+#
+# Authors: Adithya Renduchintala, Rebecca Knowles, David Snyder
+
 import gzip
 import pdb
 from nltk.tokenize import word_tokenize
@@ -8,7 +14,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import NpLayers as L
+import Autoencoder as L
 
 import numpy as np
 

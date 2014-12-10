@@ -1,5 +1,12 @@
+# CS 600.615 Big Data
+#
+# This script demonstrates parallel autoencoder decoding in Pyspark.
+# See Autoencoder.py for the autoencoder implementation.
+#
+# Authors: Rebecca Knowles, David Snyder, Adithya Renduchintala
+
 from pyspark import SparkContext, SparkConf
-from ReadAmazonReview import parse
+from TrainSerial import parse
 import gzip
 
 try:
@@ -7,7 +14,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import NpLayers as L
+import Autoencoder as L
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 if __name__ == '__main__':

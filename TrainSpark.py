@@ -2,7 +2,7 @@
 #
 # This script demonstrates parallel autoencoder training in Pyspark
 # using a simple averaging method.
-# See NpLayers.py for the autoencoder implementation.
+# See Autoencoder.py for the autoencoder implementation.
 #
 # Authors: David Snyder, Adithya Renduchintala, Rebecca Knowles
 
@@ -18,7 +18,8 @@ try:
 except ImportError:
     import json as simplejson
 
-import NpLayers as L
+import Autoencoder as L
+from TrainSerial import make_data, make_vocab
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 
@@ -37,45 +38,6 @@ def parse(filename):
         attribute_val = l[colonPos + 2:]
         entry[attribute_name] = attribute_val
     yield entry
-
-def make_vocab(path_to_corpus, path_to_funcwords, max_vocab=5000):
-    funcwords = set(open(path_to_funcwords, 'r').read().split('\n'))
-    vocab_id = {}
-    vocab_count = {}
-    print 'making vocab list...'
-    for e in parse(path_to_corpus):
-        if 'review/text' in e:
-            s = e['review/text']
-            txt = set([t.lower() for t in word_tokenize(s)])
-            tokens = txt - funcwords
-
-            for t in tokens:
-                vocab_count[t] = vocab_count.get(t, 0.0) + 1.0
-    vocab_count_inv = sorted([(c, t) for t, c in vocab_count.items()], reverse=True)[:max_vocab]
-    capped_vocab = [t for c, t in vocab_count_inv]
-
-    write_vocab_map = open('vocab.map', 'w')
-    for idx, token in enumerate(capped_vocab):
-        vocab_id[token] = len(vocab_id)
-        write_vocab_map.write(token + '\t' + str(vocab_id[token]) + '\n')
-    write_vocab_map.flush()
-    write_vocab_map.close()
-    return vocab_id
-
-
-def make_data(path_to_corpus, vocab_id):
-    data = []
-    for e in parse(path_to_corpus):
-        if 'review/text' in e:
-            s = e['review/text']
-            tokens = set([t.lower() for t in word_tokenize(s)])
-            sparse_bit_vector = [vocab_id[t] for t in tokens if t in vocab_id]
-            bt = [0.0] * len(vocab_id)
-            for i in sparse_bit_vector:
-                bt[i] = 1.0
-            bt = np.reshape(bt, (len(bt), 1))
-            data.append((bt, bt))
-    return data
 
 # Train the parameters of the autoencoder in bae for a maximum of max_itr
 # function evaluations of l-BFGS on some partition of data in itr. Returns
