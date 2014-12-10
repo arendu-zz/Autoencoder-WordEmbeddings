@@ -3,7 +3,7 @@
 # This script demonstrates parallel autoencoder training using
 # the Python library multiprocessing to create parallelism.
 # The algorithm is a simple averaging technique.
-# See Autoencoder.py for the autoencoder implementation.
+# See NpLayers.py for the autoencoder implementation.
 #
 # Authors: Adithya Renduchintala, Rebecca Knowles, David Snyder
 
@@ -18,7 +18,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import Autoencoder as L
+import NpLayers as L
 from TrainSerial import make_data, make_vocab
 
 global itr_weights, itr_cost, num_chunks, autoencoders, data_chunks

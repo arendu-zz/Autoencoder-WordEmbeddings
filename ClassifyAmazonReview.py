@@ -2,7 +2,7 @@
 #
 # This script demonstrates classification using learned representations.
 #
-# See Autoencoder.py for the autoencoder implementation.
+# See NpLayers.py for the autoencoder implementation.
 #
 # Authors: David Snyder, Adithya Renduchintala, Rebecca Knowles
 
@@ -18,7 +18,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import Autoencoder as L
+import NpLayers as L
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 

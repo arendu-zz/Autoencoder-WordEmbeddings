@@ -1,7 +1,7 @@
 # CS 600.615 Big Data
 #
 # This script demonstrates serial autoencoder decoding.
-# See Autoencoder.py for the autoencoder implementation.
+# See NpLayers.py for the autoencoder implementation.
 #
 # Authors: Rebecca Knowles, David Snyder, Adithya Renduchintala
 
@@ -17,7 +17,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import Autoencoder as L
+import NpLayers as L
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 

@@ -14,7 +14,7 @@ try:
 except ImportError:
     import json as simplejson
 
-import Autoencoder as L
+import NpLayers as L
 
 import numpy as np
 
