@@ -7,7 +7,7 @@
 #
 # Authors: Adithya Renduchintala, Rebecca Knowles, David Snyder
 
-import gzip
+import gzip, sys
 import multiprocessing
 from multiprocessing import Pool
 from multiprocessing import Process
@@ -45,10 +45,10 @@ def parallel_train_accumulate(results):
 
 if __name__ == '__main__':
 
-    # script here
-    corpus = "Arts.txt.gz"
+    corpus = sys.argv[1]
+    num_chunks = float(sys.argv[2])
+    
     max_vocab = 5000
-    num_chunks = 20
     hidden_nodes = 200
     print 'making vocab...'
     vocab_map_name = '.'.join([corpus, str(max_vocab), 'map'])
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # subsets of the the training data.
     avg_ae = L.Network(0.1, [len(vocab_id),hidden_nodes, len(vocab_id)], full_data)
     nn_weights = avg_ae.get_network_weights()
-    cpu_count = num_chunks
+    cpu_count = int(num_chunks)
     for c in xrange(int(num_chunks)):
         data_chunk = full_data[c * int(len(full_data) / num_chunks): (c + 1) * int(len(full_data) / num_chunks)]
         ae = L.Network(0.1, [len(vocab_id),hidden_nodes ,len(vocab_id)], data_chunk)
