@@ -114,7 +114,7 @@ if __name__ == '__main__':
     decoded = np.array(decoded).reshape((len(data), inside_width))
     data = np.array(data).reshape((len(data), input_width))
     data_with_decoded = np.array(data_with_decoded).reshape(len(data), input_width + inside_width)
-    pdb.set_trace()
+
     labels = np.array(labels)
 
     from sklearn.cross_validation import cross_val_score
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # Choose your classifier from these, or others
     # clf = MultinomialNB()
     clf = SVC(kernel='linear')
-    #Score with cross-fold validation
+    # Score with cross-fold validation
     dec_scores = cross_val_score(clf, decoded, labels, cv=folds)
     print("Representation Accuracy: %0.2f (+/- %0.2f)" % (dec_scores.mean(), dec_scores.std() * 2))
 
