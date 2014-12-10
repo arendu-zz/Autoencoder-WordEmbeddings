@@ -1,7 +1,6 @@
 # CS 600.615 Big Data
 #
-# This script demonstrates parallel autoencoder training in Pyspark
-# using a simple averaging method.
+# This script demonstrates parallel encoding.
 # See NpLayers.py for the autoencoder implementation.
 #
 # Authors: David Snyder, Adithya Renduchintala, Rebecca Knowles
@@ -80,9 +79,8 @@ def para_accum(pair):
 
 if __name__ == '__main__':
     # Pass as parameters:
-    # [path to data to decode] [file to write data embeddings]
-    # [path to autoencoder] [path to vocab.map]
-    # [file to write word embeddings]
+    # [path to data to decode] [path to autoencoder] [path to vocab.map]
+    #     [scale up factor for data (int)] [CPU count]
 
     #Output written to data_out and word_out:
     #    tab-separated: [ID]    [embedding (as list)]

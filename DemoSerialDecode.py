@@ -1,7 +1,6 @@
 # CS 600.615 Big Data
 #
-# This script demonstrates parallel autoencoder training in Pyspark
-# using a simple averaging method.
+# This script demonstrates serial encoding.
 # See NpLayers.py for the autoencoder implementation.
 #
 # Authors: David Snyder, Adithya Renduchintala, Rebecca Knowles
@@ -65,7 +64,7 @@ def make_data(path_to_corpus, vocab_id):
 if __name__ == '__main__':
     # Pass as parameters:
     # [path to data to decode] [path to autoencoder] [path to vocab.map]
-    # [data increase] [cpus -- not used in serial]
+    #     [data increase (int)] [cpus -- not used in serial]
 
     decoding_data = sys.argv[1]
     ae = sys.argv[2]
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     print 'done reading documents', len(data), 'documents...'
     start_time = time.time()
 
-    #Decode documents
+    #Produce representations of documents
     decoded = [autoencoder.get_representation(d) for d in data]
     #print decoded
     print "Finished."
